@@ -15,7 +15,11 @@ import scala.collection.JavaConversions._
 import scala.concurrent.duration._
 import scala.util.{ Failure, Success, Try }
 
-class SmsSendingActor extends Actor with ActorLogging {
+/**
+ * Implementation of a clint for a smsc.ua.
+ * See: http://smsc.ua/api/http/
+ */
+class SmscSendingActor extends Actor with ActorLogging {
   import Global._
 
   var connectionPoolFlowOpt: Option[Flow[(HttpRequest, Message), (Try[HttpResponse], Message), HostConnectionPool]] = None
@@ -33,7 +37,7 @@ class SmsSendingActor extends Actor with ActorLogging {
     case result: SmsResult =>
       result.response match {
         case Success(resp) =>
-          log.info(s"Unisend responded with $resp")
+          log.info(s"Smsc responded with $resp")
           val future = resp.entity.toStrict(timeout).map { _.data.utf8String }
           future.onComplete { d =>
             log.info(s"Data: ${d.get}")
@@ -66,13 +70,17 @@ class SmsSendingActor extends Actor with ActorLogging {
     })
 
   def buildRequest(msg: Message): HttpRequest = {
+
     val path = config.getString("path")
-    val key = config.getString("key")
+    val login = config.getString("login")
+    val password = config.getString("password")
+
     val phones = msg.meta.get("destination").map(_.toString).getOrElse(config.getString("destination"))
     val from = msg.meta.get("fromName").map(_.toString).getOrElse(config.getString("fromName"))
     val body = msg.body.map(JsString(_)).getOrElse(config.getString("body"))
 
-    val url = s"$path?format=json&api_key=$key&phone=$phones&sender=$from&text=$body"
+    // http://smsc.ua/sys/send.php?login=<login>&psw=<password>&phones=<phones>&mes=<message>
+    val url = s"$path?login$login&psw=$password&phone=$phones&sender=$from&mes=$body"
     HttpRequest(uri = url)
   }
 
