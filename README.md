@@ -1,11 +1,10 @@
-## Sender app
+## Sender app [![Build Status](https://travis-ci.org/petronovak/sender-app.svg?branch=master)](https://travis-ci.org/petronovak/sender-app)
 
+The Sender is a simple application that is able to transfer JSON messages from a source into one or several destinations according to specified rules.
 
-The Sender is a simple application that is able to transfer JSON messages from a source into one or several destinations according to specified rules. 
+It supports two sources at the moment: HTTP request and Kafka topic and multiple different destinations: Mandrill, Mailgun, HTTP request, Kafka or SMS gateway.
 
-It supports two sources at the moment: HTTP request and Kafka topic and multiple different destinations: Mandrill, Mailgun, HTTP request, Kafka or SMS gateway. 
-
-To configure any of receivers one should use following config template: 
+To configure any of receivers one should use following config template:
 
 ```conf
 kafka-receiver {
@@ -46,7 +45,7 @@ Rules define a filter for incoming messages and how they should be transformed a
 Sender allows, for example, to get all messages from some Kafka topic, filter email confirmation events from all events stream (by some field value) and send it to email or SMS. Or it can transform all messages from one Kafka topic and put them into another, or even just accept HTTP messages and route them into Kafka.
 
 Rules are defined in the same config as array of `if`-`do` blocks:
- 
+
 ```
 rules = [
   {
