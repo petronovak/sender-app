@@ -12,7 +12,7 @@ enablePlugins(JavaAppPackaging)
 name in Docker := "sender-app"
 dockerExposedPorts := Seq(6080)
 dockerBaseImage := "relateiq/oracle-java8"
-dockerRepository := Some("petronovak")
+dockerRepository := Some("impactua")
 dockerUpdateLatest := true
 
 libraryDependencies ++= Seq(

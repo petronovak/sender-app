@@ -20,5 +20,5 @@ script:
 after_success:
   - if [ "$TRAVIS_BRANCH" == "master" ]; then
     docker login -e="$DOCKER_EMAIL" -u="$DOCKER_LOGIN" -p="$DOCKER_PASS";
-    docker push $DOCKER_LOGIN/sender-app;
+    docker push impactua/sender-app;
     fi
