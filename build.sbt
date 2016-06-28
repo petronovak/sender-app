@@ -2,7 +2,7 @@ import scalariform.formatter.preferences._
 
 name := """sender-app"""
 
-val revision = sys.env.getOrElse("build", sys.props.getOrElse("TRAVIS_BUILD_NUMBER", "0-SNAPSHOT"))
+val revision = sys.env.getOrElse("TRAVIS_BUILD_NUMBER", "0-SNAPSHOT")
 version := s"""0.2.$revision"""
 
 scalaVersion := "2.11.8"
