@@ -1,6 +1,6 @@
 package com.senderapp.processing.http
 
-import akka.actor.{ Actor, ActorLogging }
+import akka.actor.{Actor, ActorLogging}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.client.RequestBuilding
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
@@ -8,9 +8,11 @@ import akka.http.scaladsl.model._
 import akka.pattern.pipe
 import akka.util.ByteString
 import com.senderapp.Global
-import com.senderapp.model.{ Events, Message }
+import com.senderapp.model.{Events, Message}
 import com.senderapp.utils.Utils
-import com.typesafe.config.{ Config, ConfigFactory }
+import com.senderapp.utils.Utils._
+import com.typesafe.config.{Config, ConfigFactory}
+
 import scala.collection.JavaConversions._
 import scala.concurrent.duration._
 
@@ -39,10 +41,10 @@ class HttpSendingActor extends Actor with ActorLogging {
   }
 
   def sendRequest(msg: Message) = {
-    val urlstr = msg.meta.getOrElse("destination", config.getString("destination")).toString
-    val method = msg.meta.getOrElse("method", config.getString("method")).toString.toLowerCase
+    val urlstr = msg.meta.getStringOpt("destination").getOrElse(config.getString("destination"))
+    val method = msg.meta.getStringOpt("method").getOrElse(config.getString("method")).toLowerCase
 
-    val headers = headersConf ++ msg.meta.get("headers").map { _.asInstanceOf[List[Map[String, String]]] }.getOrElse(List())
+    val headers = headersConf // TODO: ++ msg.meta.get("headers").map { _.asInstanceOf[List[Map[String, String]]] }.getOrElse(List())
     val akkaHeaders = parseHeaders(headers)
 
     log.info(s"Calling $method $urlstr, headers: $headers")

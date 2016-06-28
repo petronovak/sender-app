@@ -2,12 +2,14 @@ package com.senderapp.templates
 
 import java.security.InvalidParameterException
 
-import com.senderapp.model.{ JsonMessageData, Message }
+import com.senderapp.model.Message
 import spray.json.JsString
 
-import scala.compat.Platform
-import scala.io.Source
 import scala.collection._
+import scala.compat.Platform
+import com.senderapp.utils.Utils._
+
+import scala.io.Source
 
 /**
  * Wrapper class for all supported template engines and sources.
@@ -38,31 +40,21 @@ class TemplateEngine {
     renderBodyCached(msg)
   }
 
-  def renderBodyCached(msg: Message): Option[String] = msg.meta.get("template").flatMap {
+  def renderBodyCached(msg: Message): Option[String] = msg.meta.getStringOpt("template").flatMap {
     case templateUrl: String if templateUrl.contains("://") && templateUrl.endsWith(".mustache") =>
-      Some(cache.getOrElseUpdate(templateUrl, new Mustache(Source.fromURL(templateUrl, "UTF-8"))).render(msg.data.asMap))
+      Some(cache.getOrElseUpdate(templateUrl, new Mustache(Source.fromURL(templateUrl, "UTF-8"))).render(msg.dataAsMap)) // TODO: pass meta also
 
     case templateFile: String if templateFile.endsWith(".mustache") =>
-      Some(cache.getOrElseUpdate(templateFile, new Mustache(Source.fromFile(templateFile, "UTF-8"))).render(msg.data.asMap))
+      Some(cache.getOrElseUpdate(templateFile, new Mustache(Source.fromFile(templateFile, "UTF-8"))).render(msg.dataAsMap)) // TODO: pass meta also
 
     case templateInline: String if templateInline.startsWith("mustache:") =>
       val templateData = templateInline.substring("mustache:".length)
-      Some(cache.getOrElseUpdate(templateInline, new Mustache(Source.fromString(templateData))).render(msg.data.asMap))
+      Some(cache.getOrElseUpdate(templateInline, new Mustache(Source.fromString(templateData))).render(msg.dataAsMap)) // TODO: pass meta also
 
     case "raw-json" =>
-      msg.data match {
-        case jsonData: JsonMessageData =>
-          Some(jsonData.js.compactPrint)
-        case _ =>
-          throw new InvalidParameterException("Message data can not be converted into JSON")
-      }
+      Some(msg.data.compactPrint)
     case "bin-data" =>
-      msg.data match {
-        case jsonData: JsonMessageData =>
-          Some(jsonData.js.asJsObject.fields("bin").asInstanceOf[JsString].value) // TODO: validation
-        case _ =>
-          throw new InvalidParameterException("Message data can not be converted into JSON")
-      }
+      Some(msg.data.asJsObject.fields("bin").asInstanceOf[JsString].value) // TODO: validation
     case other =>
       None
   }

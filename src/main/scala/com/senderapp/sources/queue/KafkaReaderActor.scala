@@ -2,14 +2,15 @@ package com.senderapp.sources.queue
 
 import java.util
 
-import akka.actor.{ Actor, ActorLogging }
+import akka.actor.{Actor, ActorLogging}
 import akka.stream.scaladsl.Source
 import com.senderapp.Global
-import com.senderapp.model.{ Events, Message, JsonMessageData }
-import com.softwaremill.react.kafka.{ ConsumerProperties, PublisherWithCommitSink, ReactiveKafka }
+import com.senderapp.model.{Events, Message}
+import com.softwaremill.react.kafka.{ConsumerProperties, PublisherWithCommitSink, ReactiveKafka}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.Deserializer
-import spray.json.{ JsValue, JsonParser }
+import spray.json.{JsObject, JsString, JsValue, JsonParser}
+import com.senderapp.utils.Utils._
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -20,20 +21,22 @@ class KafkaReaderActor extends Actor with ActorLogging {
 
   val kafka = new ReactiveKafka()
   var consumerWithOffsetSink: Option[PublisherWithCommitSink[Array[Byte], JsValue]] = None
-  var meta: Map[String, String] = _
+  var meta = JsObject()
   var consumerProps: Option[ConsumerProperties[Array[Byte], JsValue]] = None
   val processor = context.actorSelection("/user/messages-router")
 
   override def receive: Receive = {
     case Events.Configure(name, newConfig) =>
-      meta = Map("source" -> name)
-
-      val brokers = newConfig.getString("brokerList")
-      val topic = newConfig.getString("topicName")
-      val group = newConfig.getString("groupId")
-
+      meta = JsObject("source" -> JsString(name))
       stopConsumer
-      initReader(brokers, topic, group)
+
+      if (newConfig.hasPath("brokerList")) {
+        val brokers = newConfig.getString("brokerList")
+        val topic = newConfig.getString("topicName")
+        val group = newConfig.getString("groupId")
+
+        initReader(brokers, topic, group)
+      }
     case e =>
       log.error(s"Unknown event: $e")
   }
@@ -53,12 +56,14 @@ class KafkaReaderActor extends Actor with ActorLogging {
 
   def processMessage(msg: ConsumerRecord[Array[Byte], JsValue]) = {
     val completeMeta = if (msg.key() != null) {
-      meta ++ Map("topic" -> msg.topic(), "key" -> new String(msg.key()))
+      meta ++ JsObject(
+        "topic" -> JsString(msg.topic()), "key" -> JsString(new String(msg.key()))
+      )
     } else {
-      meta + ("topic" -> msg.topic())
+      meta ++ JsObject("topic" -> JsString(msg.topic()))
     }
 
-    val jsMsg = Message("trash", completeMeta, JsonMessageData(msg.value()))
+    val jsMsg = Message("trash", completeMeta, msg.value())
     processor ! jsMsg
     msg
   }

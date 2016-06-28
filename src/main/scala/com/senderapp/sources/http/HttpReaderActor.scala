@@ -9,21 +9,13 @@ import akka.http.scaladsl.server.directives.Credentials
 import akka.persistence.PersistentActor
 import akka.stream.ActorMaterializer
 import com.senderapp.Global
-import com.senderapp.model.{ Events, JsonMessageData, Message }
+import com.senderapp.model.{ Events, Message }
 import spray.json._
+import com.senderapp.utils.Utils._
 
 import scala.concurrent.Future
 
-trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
-  implicit object JsonMessageDataFormat extends RootJsonFormat[JsonMessageData] {
-    def write(c: JsonMessageData) = ??? // don't care
-    def read(value: JsValue) = {
-      JsonMessageData(value.asJsObject)
-    }
-  }
-}
-
-sealed case class HttpCmd(user: String, data: JsonMessageData)
+sealed case class HttpCmd(user: String, data: JsValue)
 
 class HttpReaderActor extends PersistentActor with ActorLogging {
 
@@ -35,7 +27,7 @@ class HttpReaderActor extends PersistentActor with ActorLogging {
 
   var serverOpt: Option[HttpServer] = None
 
-  var meta: Map[String, String] = _
+  var meta = JsObject()
 
   override def preStart() {
     super.preStart()
@@ -47,7 +39,7 @@ class HttpReaderActor extends PersistentActor with ActorLogging {
       persistAsync(cmd) { cmd =>
         log.info(s"Received cmd: $cmd")
         // TODO: add headers to the meta
-        processor ! Message("trash", meta + ("user" -> cmd.user), cmd.data)
+        processor ! Message("trash", meta ++ JsObject("user" -> JsString(cmd.user)), cmd.data)
       }
 
     case Events.Configure(name, config) =>
@@ -65,7 +57,7 @@ class HttpReaderActor extends PersistentActor with ActorLogging {
         }
       }
 
-      meta = Map("source" -> name)
+      meta = JsObject("source" -> JsString(name))
     case msg =>
       log.error(s"Unknown message $msg")
   }
@@ -86,7 +78,7 @@ class HttpReaderActor extends PersistentActor with ActorLogging {
 case class HttpServer(host: String, port: Int,
     context: ActorContext,
     mat: ActorMaterializer,
-    processor: ActorRef) extends JsonSupport {
+    processor: ActorRef) extends SprayJsonSupport with DefaultJsonProtocol {
 
   // TODO: implement authentication mechanism
   def authenticator: Authenticator[String] = {
@@ -107,7 +99,7 @@ case class HttpServer(host: String, port: Int,
       authenticateBasic(realm = "restricted", authenticator) { user =>
         post {
           decodeRequest {
-            entity(as[JsonMessageData]) { msgData =>
+            entity(as[JsValue]) { msgData =>
               processor ! HttpCmd(user, msgData)
               complete(OK)
             } // entity

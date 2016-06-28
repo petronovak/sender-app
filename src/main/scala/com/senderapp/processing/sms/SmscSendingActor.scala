@@ -9,11 +9,11 @@ import com.senderapp.Global
 import com.senderapp.model.{ Events, Message }
 import com.senderapp.utils.Utils
 import com.typesafe.config.{ Config, ConfigFactory }
-import spray.json._
 
 import scala.collection.JavaConversions._
 import scala.concurrent.duration._
 import scala.util.{ Failure, Success, Try }
+import Utils._
 
 /**
  * Implementation of a clint for a smsc.ua.
@@ -75,9 +75,9 @@ class SmscSendingActor extends Actor with ActorLogging {
     val login = config.getString("login")
     val password = config.getString("password")
 
-    val phones = msg.meta.get("destination").map(_.toString).getOrElse(config.getString("destination"))
-    val from = msg.meta.get("fromName").map(_.toString).getOrElse(config.getString("fromName"))
-    val body = msg.body.map(JsString(_)).getOrElse(config.getString("body"))
+    val phones = msg.meta.getString("destination",config.getString("destination"))
+    val from = msg.meta.getString("fromName",config.getString("fromName"))
+    val body = msg.body.getOrElse(config.getString("body"))
 
     // http://smsc.ua/sys/send.php?login=<login>&psw=<password>&phones=<phones>&mes=<message>
     val url = s"$path?login$login&psw=$password&phone=$phones&sender=$from&mes=$body"

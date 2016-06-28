@@ -14,7 +14,7 @@ import spray.json._
 import scala.collection.JavaConversions._
 import scala.concurrent.duration._
 import scala.util.{ Failure, Success, Try }
-
+import Utils._
 class UnisendSmsSendingActor extends Actor with ActorLogging {
   import Global._
 
@@ -68,9 +68,9 @@ class UnisendSmsSendingActor extends Actor with ActorLogging {
   def buildRequest(msg: Message): HttpRequest = {
     val path = config.getString("path")
     val key = config.getString("key")
-    val phones = msg.meta.get("destination").map(_.toString).getOrElse(config.getString("destination"))
-    val from = msg.meta.get("fromName").map(_.toString).getOrElse(config.getString("fromName"))
-    val body = msg.body.map(JsString(_)).getOrElse(config.getString("body"))
+    val phones = msg.meta.getString("destination", config.getString("destination"))
+    val from = msg.meta.getString("fromName", config.getString("fromName"))
+    val body = msg.body.getOrElse(config.getString("body"))
 
     val url = s"$path?format=json&api_key=$key&phone=$phones&sender=$from&text=$body"
     HttpRequest(uri = url)

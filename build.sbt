@@ -2,10 +2,10 @@ import scalariform.formatter.preferences._
 
 name := """sender-app"""
 
-val revision = sys.env.getOrElse("build", sys.props.getOrElse("build", "0-SNAPSHOT"))
-version := s"""0.1.$revision"""
+val revision = sys.env.getOrElse("build", sys.props.getOrElse("TRAVIS_BUILD_NUMBER", "0-SNAPSHOT"))
+version := s"""0.2.$revision"""
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 
 enablePlugins(JavaAppPackaging)
 
@@ -17,8 +17,8 @@ dockerUpdateLatest := true
 
 libraryDependencies ++= Seq(
   "com.softwaremill.reactivekafka" %% "reactive-kafka-core" % "0.9.0",
-  "ch.qos.logback" % "logback-classic" % "1.1.3",
-  "org.slf4j" % "log4j-over-slf4j" % "1.7.14",
+  "ch.qos.logback" % "logback-classic" % "1.1.7",
+  "org.slf4j" % "log4j-over-slf4j" % "1.7.21",
   "com.typesafe.akka" %% "akka-slf4j" % "2.4.1",
   "com.typesafe.akka" %% "akka-http-experimental" % "2.0.3",
   "com.typesafe.akka" %% "akka-persistence-experimental" % "2.3.14",

@@ -9,13 +9,14 @@ import akka.http.scaladsl.model.{ HttpResponse, HttpRequest }
 import akka.http.scaladsl.Http
 import akka.stream.scaladsl.{ Flow, Sink, Source }
 import com.senderapp.Global
-import com.senderapp.model.{ Events, JsonMessageData, Message }
+import com.senderapp.model.{ Events, Message }
 import com.senderapp.utils.Utils
 import com.typesafe.config.{ ConfigFactory, Config }
 import spray.json._
 import scala.collection.JavaConversions._
 import scala.util.{ Failure, Success, Try }
 import scala.concurrent.duration._
+import Utils._
 
 class MandrillSendingActor extends Actor with ActorLogging {
   import Global._
@@ -85,37 +86,33 @@ class MandrillSendingActor extends Actor with ActorLogging {
   }
 
   def toMandrillMessage(msg: Message): JsObject = {
-    val fromEmail = msg.meta.get("fromEmail").map(_.toString).getOrElse(config.getString("fromEmail"))
-    val fromName = msg.meta.get("fromName").map(_.toString).getOrElse(config.getString("fromName"))
-    val destination = msg.meta.get("destination").map(_.toString).getOrElse(config.getString("destination"))
-    val headers = headersConf ++ msg.meta.get("headers").map(_.asInstanceOf[List[Map[String, String]]]).getOrElse(List())
-    val subject = msg.meta.get("subject").map(_.toString).getOrElse(config.getString("subject"))
+    val fromEmail = msg.meta.getStringOpt("fromEmail").getOrElse(config.getString("fromEmail"))
+    val fromName = msg.meta.getStringOpt("fromName").getOrElse(config.getString("fromName"))
+    val destination = msg.meta.getStringOpt("destination").getOrElse(config.getString("destination"))
+    // TODO: val headers = headersConf ++ msg.meta.get("headers").map(_.asInstanceOf[List[Map[String, String]]]).getOrElse(List())
+    val subject = msg.meta.getStringOpt("subject").getOrElse(config.getString("subject"))
 
-    val headersJs = headers.map { m =>
+    /*val headersJs = headers.map { m =>
       val item = m.head
       (item._1, JsString(item._2))
-    }
+    }*/
 
-    val tplData = msg.data match {
-      case json: JsonMessageData =>
-        JsArray(json.js.asJsObject.fields.toSeq.map {
-          case (k, v) => JsObject(
-            "key" -> JsString(k),
-            "content" -> v
-          )
-        }: _*)
-      case _ => JsArray.empty
-    }
+    val tplData = JsArray(msg.data.asJsObject.fields.toSeq.map {
+      case (k, v) => JsObject(
+        "key" -> JsString(k),
+        "content" -> v
+      )
+    }: _*)
 
     JsObject(
       "subject" -> JsString(subject),
       "from_email" -> JsString(fromEmail),
       "from_name" -> JsString(fromName),
-      "important" -> JsBoolean(msg.meta.get("important").map(_.toString.toBoolean).getOrElse(false)),
+      "important" -> JsBoolean(msg.meta.getBool("important")),
       "to" -> JsArray(
         JsObject("email" -> JsString(destination))
       ),
-      "headers" -> JsObject(headersJs: _*),
+      // TODO: "headers" -> JsObject(headersJs: _*),
       "merge_language" -> JsString("handlebars"),
       "global_merge_vars" -> tplData,
       "html" -> msg.body.map(JsString(_)).getOrElse(JsNull)

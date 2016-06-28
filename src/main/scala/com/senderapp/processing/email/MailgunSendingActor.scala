@@ -14,6 +14,7 @@ import com.typesafe.config.{ Config, ConfigFactory }
 import scala.collection.immutable.Seq
 import scala.concurrent.duration._
 import scala.util.{ Failure, Success, Try }
+import com.senderapp.utils.Utils._
 
 class MailgunSendingActor extends Actor with ActorLogging {
   import Global._
@@ -75,10 +76,10 @@ class MailgunSendingActor extends Actor with ActorLogging {
     })
 
   def buildRequest(msg: Message): RequestEntity = {
-    val fromEmail = msg.meta.get("fromEmail").map(_.toString).getOrElse(config.getString("fromEmail"))
-    val destination = msg.meta.get("destination").map(_.toString).getOrElse(config.getString("destination"))
-    val headers = headersConf ++ msg.meta.get("headers").map(_.asInstanceOf[List[Map[String, String]]]).getOrElse(List())
-    val subject = msg.meta.get("subject").map(_.toString).getOrElse(config.getString("subject"))
+    val fromEmail = msg.meta.getStringOpt("fromEmail").getOrElse(config.getString("fromEmail"))
+    val destination = msg.meta.getStringOpt("destination").getOrElse(config.getString("destination"))
+    // TODO: val headers = headersConf ++ msg.meta.getStringOpt("headers").map(_.asInstanceOf[List[Map[String, String]]]).getOrElse(List())
+    val subject = msg.meta.getStringOpt("subject").getOrElse(config.getString("subject"))
 
     /* val headersJs = headers.map { m =>
       val item = m.head
