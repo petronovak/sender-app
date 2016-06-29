@@ -56,6 +56,7 @@ object Utils {
     def getBool(path: String, defVal: => Boolean = false): Boolean = pathOpt(path).filter(_.isInstanceOf[JsBoolean]).map(_.asInstanceOf[JsBoolean].value).getOrElse(defVal)
     def getBoolOpt(path: String): Option[Boolean] = pathOpt(path).filter(_.isInstanceOf[JsBoolean]).map(_.asInstanceOf[JsBoolean].value)
     def ++(otherVal: JsValue): JsObject = JsObject(js.asJsObject.fields ++ otherVal.asJsObject.fields)
+    def mapValues(mapper: JsValue => JsValue): JsValue = mapJson(js, mapper)
   }
 
   private[this] def unwrapJson(js: JsValue): Any = js match {
@@ -69,6 +70,15 @@ object Utils {
       str.value
     case any: JsValue =>
       any.toString()
+  }
+
+  private[this] def mapJson(js: JsValue, mapper: JsValue => JsValue): JsValue = js match {
+    case obj: JsObject =>
+      JsObject(obj.fields.map { case (name, f) => (name, mapJson(f, mapper)) }.toSeq :_*)
+    case arr: JsArray =>
+      JsArray(arr.elements.map(el => mapJson(el, mapper)))
+    case any: JsValue =>
+      mapper(any)
   }
 
   private[this] def jsPath(jsValue: JsValue, path: String): Option[JsValue] = jsValue match {

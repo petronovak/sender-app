@@ -3,10 +3,9 @@ package com.senderapp.model
 import akka.event.LoggingAdapter
 import com.senderapp.model.matchers.{Matcher, Matchers}
 import com.senderapp.templates.Mustache
-import com.senderapp.utils.Utils
 import com.senderapp.utils.Utils._
 import com.typesafe.config._
-import spray.json.{JsNull, JsObject, JsValue}
+import spray.json.{JsObject, JsString, JsValue}
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
@@ -81,16 +80,17 @@ class Trigger(config: Config) {
   val otherFields: JsObject = config.root().asJsObject
 
   def apply(msg: Message): ProcessingResult = {
-    val meta = msg.meta.asJsObject.copy(otherFields.fields)  // TODO: ++ otherFields.map { case (k, v) => (k, loadVars(msg, v)) }
+    val meta = msg.meta.asJsObject.copy(otherFields.fields).mapValues(js => loadVars(msg, js))
     val updatedMsg = Message(service.getOrElse(msg.service), meta, msg.data)
 
     ProcessingResult(updatedMsg, send = service.isDefined, continue = continue)
   }
 
-  def loadVars(msg: Message, v: AnyRef): AnyRef = v match {
-    case template: String if template.contains("{{") =>
-      new Mustache(Source.fromString(template)).render(msg.dataAsMap)
-    case any => any
+  def loadVars(msg: Message, v: JsValue): JsValue = v match {
+    case template: JsString if template.value.contains("{{") =>
+      JsString(new Mustache(Source.fromString(template.value)).render(msg.asTemplateData)))
+    case any =>
+      any
   }
 
   override def toString = s"Trigger: service = $service, fields = $otherFields"

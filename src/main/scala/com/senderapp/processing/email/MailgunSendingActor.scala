@@ -86,6 +86,8 @@ class MailgunSendingActor extends Actor with ActorLogging {
       ("h:" + item._1) -> item._2
     } */
 
+    log.debug(s"Mailgun request: from: $fromEmail, to: $destination, subject: $subject")
+
     FormData(
       "from" -> fromEmail,
       "to" -> destination,

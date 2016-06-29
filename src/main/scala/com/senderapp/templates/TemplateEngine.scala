@@ -40,16 +40,16 @@ class TemplateEngine {
     renderBodyCached(msg)
   }
 
-  def renderBodyCached(msg: Message): Option[String] = msg.meta.getStringOpt("template").flatMap {
+  private[this] def renderBodyCached(msg: Message): Option[String] = msg.meta.getStringOpt("template").flatMap {
     case templateUrl: String if templateUrl.contains("://") && templateUrl.endsWith(".mustache") =>
-      Some(cache.getOrElseUpdate(templateUrl, new Mustache(Source.fromURL(templateUrl, "UTF-8"))).render(msg.dataAsMap)) // TODO: pass meta also
+      Some(cache.getOrElseUpdate(templateUrl, new Mustache(Source.fromURL(templateUrl, "UTF-8"))).render(msg.asTemplateData))
 
     case templateFile: String if templateFile.endsWith(".mustache") =>
-      Some(cache.getOrElseUpdate(templateFile, new Mustache(Source.fromFile(templateFile, "UTF-8"))).render(msg.dataAsMap)) // TODO: pass meta also
+      Some(cache.getOrElseUpdate(templateFile, new Mustache(Source.fromFile(templateFile, "UTF-8"))).render(msg.asTemplateData))
 
-    case templateInline: String if templateInline.startsWith("mustache:") =>
-      val templateData = templateInline.substring("mustache:".length)
-      Some(cache.getOrElseUpdate(templateInline, new Mustache(Source.fromString(templateData))).render(msg.dataAsMap)) // TODO: pass meta also
+    case templateInline: String if templateInline.startsWith("mustache:") || templateInline.contains("{{") =>
+      val templateData = if(templateInline.startsWith("mustache:")) templateInline.substring("mustache:".length) else templateInline
+      Some(cache.getOrElseUpdate(templateInline, new Mustache(Source.fromString(templateData))).render(msg.asTemplateData))
 
     case "raw-json" =>
       Some(msg.data.compactPrint)
