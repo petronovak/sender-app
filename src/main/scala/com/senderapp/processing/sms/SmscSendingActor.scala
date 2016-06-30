@@ -1,18 +1,20 @@
 package com.senderapp.processing.sms
 
-import akka.actor.{ Actor, ActorLogging }
+import java.net.URLEncoder
+
+import akka.actor.{Actor, ActorLogging}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.HostConnectionPool
-import akka.http.scaladsl.model.{ HttpRequest, HttpResponse }
-import akka.stream.scaladsl.{ Flow, Sink, Source }
+import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
+import akka.stream.scaladsl.{Flow, Sink, Source}
 import com.senderapp.Global
-import com.senderapp.model.{ Events, Message }
+import com.senderapp.model.{Events, Message}
 import com.senderapp.utils.Utils
-import com.typesafe.config.{ Config, ConfigFactory }
+import com.typesafe.config.{Config, ConfigFactory}
 
 import scala.collection.JavaConversions._
 import scala.concurrent.duration._
-import scala.util.{ Failure, Success, Try }
+import scala.util.{Failure, Success, Try}
 import Utils._
 
 /**
@@ -75,9 +77,9 @@ class SmscSendingActor extends Actor with ActorLogging {
     val login = config.getString("login")
     val password = config.getString("password")
 
-    val phones = msg.meta.getString("destination", config.getString("destination"))
-    val from = msg.meta.getString("fromName", config.getString("fromName"))
-    val body = msg.body.getOrElse(config.getString("body"))
+    val phones = URLEncoder.encode(msg.meta.getString("destination", config.getString("destination")), "UTF-8")
+    val from = URLEncoder.encode(msg.meta.getString("fromName", config.getString("fromName")), "UTF-8")
+    val body = URLEncoder.encode(msg.body.getOrElse(config.getString("body")), "UTF-8")
 
     // http://smsc.ua/sys/send.php?login=<login>&psw=<password>&phones=<phones>&mes=<message>
     val url = s"$path?login$login&psw=$password&phone=$phones&sender=$from&mes=$body"
