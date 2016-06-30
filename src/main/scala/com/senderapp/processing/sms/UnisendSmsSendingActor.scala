@@ -51,7 +51,7 @@ class UnisendSmsSendingActor extends Actor with ActorLogging {
   }
 
   def configure(newConfig: Config) {
-    config = newConfig.withFallback(ConfigFactory.defaultReference().getConfig("mandrill"))
+    config = newConfig.withFallback(ConfigFactory.defaultReference().getConfig("unisend"))
     headersConf = config.getObjectList("headers").map(Utils.unwrap).toList.asInstanceOf[List[Map[String, String]]]
     implicit val system = context.system
 

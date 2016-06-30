@@ -5,7 +5,7 @@ import java.net.URLEncoder
 import akka.actor.{Actor, ActorLogging}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.HostConnectionPool
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
+import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse}
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import com.senderapp.Global
 import com.senderapp.model.{Events, Message}
@@ -45,7 +45,7 @@ class SmscSendingActor extends Actor with ActorLogging {
             log.info(s"Data: ${d.get}")
           }
         case Failure(ex) =>
-          log.warning("Error sending request to unisend", ex)
+          log.warning("Error sending request to smsc: ", ex)
       }
 
     case Events.Configure(name, newConfig) =>
@@ -55,13 +55,13 @@ class SmscSendingActor extends Actor with ActorLogging {
   }
 
   def configure(newConfig: Config) {
-    config = newConfig.withFallback(ConfigFactory.defaultReference().getConfig("mandrill"))
+    config = newConfig.withFallback(ConfigFactory.defaultReference().getConfig("smsc"))
     headersConf = config.getObjectList("headers").map(Utils.unwrap).toList.asInstanceOf[List[Map[String, String]]]
     implicit val system = context.system
 
     // do not restart connection pool it doesn't change anyway
     if (connectionPoolFlowOpt.isEmpty) {
-      connectionPoolFlowOpt = Some(Http().cachedHostConnectionPoolTls[Message](config.getString("host"), config.getInt("port")))
+      connectionPoolFlowOpt = Some(Http().cachedHostConnectionPoolTls[Message](config.getString("host")))
     }
   }
 
@@ -83,7 +83,10 @@ class SmscSendingActor extends Actor with ActorLogging {
 
     // http://smsc.ua/sys/send.php?login=<login>&psw=<password>&phones=<phones>&mes=<message>
     val url = s"$path?login$login&psw=$password&phone=$phones&sender=$from&mes=$body"
-    HttpRequest(uri = url)
+
+    log.info(s"Sending smsc request: $url")
+
+    HttpRequest(uri = url, method = HttpMethods.GET)
   }
 
   case class SmsResult(response: Try[HttpResponse], msg: Message) extends Serializable
