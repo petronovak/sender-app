@@ -1,12 +1,12 @@
 package com.senderapp.model.utils
 
 import com.senderapp.utils.Utils._
-import org.scalatest.{FlatSpec, Matchers}
-import spray.json.{JsNumber, JsString, JsonParser}
+import org.scalatest.{ FlatSpec, Matchers }
+import spray.json.{ JsNumber, JsString, JsonParser }
 
 /**
-  * Created by sergeykhruschak on 6/27/16.
-  */
+ * Created by sergeykhruschak on 6/27/16.
+ */
 class UtilsJsonSpec extends FlatSpec with Matchers {
   "A Utils" should "find existent jsPath " in {
     JsonParser(

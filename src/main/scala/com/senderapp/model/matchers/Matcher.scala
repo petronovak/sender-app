@@ -1,12 +1,12 @@
 package com.senderapp.model.matchers
 
 import com.senderapp.utils.Utils._
-import com.typesafe.config.{Config, ConfigObject, ConfigValue, ConfigValueType}
+import com.typesafe.config.{ Config, ConfigObject, ConfigValue, ConfigValueType }
 import spray.json.JsValue
 
 /**
-  * Created by sergeykhruschak on 6/24/16.
-  */
+ * Created by sergeykhruschak on 6/24/16.
+ */
 trait Matcher {
   def matches(v: JsValue): Boolean
 }
@@ -22,7 +22,6 @@ case class EqMatcher(path: String, pattern: ConfigValue) extends Matcher {
 case class ExistsMatcher(path: String, exists: Boolean) extends Matcher {
   override def matches(v: JsValue) = v.pathOpt(path).isDefined == exists
 }
-
 
 object Matchers {
 

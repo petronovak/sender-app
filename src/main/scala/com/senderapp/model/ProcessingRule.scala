@@ -1,11 +1,11 @@
 package com.senderapp.model
 
 import akka.event.LoggingAdapter
-import com.senderapp.model.matchers.{Matcher, Matchers}
+import com.senderapp.model.matchers.{ Matcher, Matchers }
 import com.senderapp.templates.Mustache
 import com.senderapp.utils.Utils._
 import com.typesafe.config._
-import spray.json.{JsObject, JsString, JsValue}
+import spray.json.{ JsObject, JsString, JsValue }
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
@@ -31,8 +31,8 @@ object ProcessingRule {
 
 class Criteria(config: Config) {
   val metaMatchers = if (config.hasPath("meta")) {
-        parseMatchers(mutable.ListBuffer[Matcher](), "", config.getConfig("meta"), config.getObject("meta")).toList
-      } else List[Matcher]()
+    parseMatchers(mutable.ListBuffer[Matcher](), "", config.getConfig("meta"), config.getObject("meta")).toList
+  } else List[Matcher]()
 
   val bodyMatchers = if (config.hasPath("body")) {
     parseMatchers(mutable.ListBuffer[Matcher](), "", config.getConfig("body"), config.getObject("body")).toList
@@ -54,7 +54,7 @@ class Criteria(config: Config) {
       case Some(matcher) =>
         buffer += matcher
       case None =>
-         c match {
+        c match {
           case obj: ConfigObject =>
             obj.entrySet().foreach { entry =>
               val subPath = path + (if (path.nonEmpty) "." else "") + entry.getKey
@@ -88,7 +88,7 @@ class Trigger(config: Config) {
 
   def loadVars(msg: Message, v: JsValue): JsValue = v match {
     case template: JsString if template.value.contains("{{") =>
-      JsString(new Mustache(Source.fromString(template.value)).render(msg.asTemplateData)))
+      JsString(new Mustache(Source.fromString(template.value)).render(msg.asTemplateData))
     case any =>
       any
   }

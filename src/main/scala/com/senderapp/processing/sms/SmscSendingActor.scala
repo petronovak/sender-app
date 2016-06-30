@@ -75,8 +75,8 @@ class SmscSendingActor extends Actor with ActorLogging {
     val login = config.getString("login")
     val password = config.getString("password")
 
-    val phones = msg.meta.getString("destination",config.getString("destination"))
-    val from = msg.meta.getString("fromName",config.getString("fromName"))
+    val phones = msg.meta.getString("destination", config.getString("destination"))
+    val from = msg.meta.getString("fromName", config.getString("fromName"))
     val body = msg.body.getOrElse(config.getString("body"))
 
     // http://smsc.ua/sys/send.php?login=<login>&psw=<password>&phones=<phones>&mes=<message>

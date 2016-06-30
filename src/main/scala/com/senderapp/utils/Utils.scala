@@ -1,7 +1,7 @@
 package com.senderapp.utils
 
 import com.typesafe.config._
-import spray.json.{JsObject, _}
+import spray.json.{ JsObject, _ }
 
 import scala.collection.JavaConversions._
 
@@ -18,7 +18,7 @@ object Utils {
           }: _*)
       case LIST =>
         JsArray(
-          conf.asInstanceOf[ConfigList].map(configAsJson) :_*
+          conf.asInstanceOf[ConfigList].map(configAsJson): _*
         )
       case STRING =>
         JsString(conf.unwrapped().toString)
@@ -39,7 +39,6 @@ object Utils {
     case _ =>
       v.unwrapped()
   }
-
 
   implicit class RichConfigObject(val cfg: ConfigObject) extends AnyVal {
     def getString(key: String, defVal: => String): String = getStringOpt(key).getOrElse(defVal)
@@ -74,7 +73,7 @@ object Utils {
 
   private[this] def mapJson(js: JsValue, mapper: JsValue => JsValue): JsValue = js match {
     case obj: JsObject =>
-      JsObject(obj.fields.map { case (name, f) => (name, mapJson(f, mapper)) }.toSeq :_*)
+      JsObject(obj.fields.map { case (name, f) => (name, mapJson(f, mapper)) }.toSeq: _*)
     case arr: JsArray =>
       JsArray(arr.elements.map(el => mapJson(el, mapper)))
     case any: JsValue =>

@@ -1,12 +1,12 @@
 package com.senderapp.model
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.{ Config, ConfigFactory }
 import org.scalatest._
 import spray.json._
 
 /**
-  * Created by sergeykhruschak on 6/24/16.
-  */
+ * Created by sergeykhruschak on 6/24/16.
+ */
 class CriteriaSpec extends FlatSpec with Matchers {
 
   "A Criteria" should "accept empty config" in {

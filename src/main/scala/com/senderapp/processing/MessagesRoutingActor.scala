@@ -1,8 +1,8 @@
 package com.senderapp.processing
 
 import akka.ConfigurationException
-import akka.actor.{Actor, ActorLogging}
-import com.senderapp.model.{Events, Message, ProcessingRule}
+import akka.actor.{ Actor, ActorLogging }
+import com.senderapp.model.{ Events, Message, ProcessingRule }
 import com.senderapp.templates.TemplateEngine
 import com.typesafe.config.Config
 
@@ -19,7 +19,7 @@ class MessagesRoutingActor extends Actor with ActorLogging {
     case Events.Configure(name, config) =>
       if (!config.hasPath("rules")) {
         throw new ConfigurationException("No streaming rules configured. Please create Typesafe config file and " +
-                                         "define 'rules' list there")
+          "define 'rules' list there")
       }
 
       log.debug(s"Loading rules configuration ${config.getConfigList("rules")}")

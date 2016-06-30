@@ -1,12 +1,12 @@
 package com.senderapp.model
 
 import com.senderapp.templates.TemplateEngine
-import org.scalatest.{FlatSpec, Matchers}
-import spray.json.{JsNumber, JsObject, JsString}
+import org.scalatest.{ FlatSpec, Matchers }
+import spray.json.{ JsNumber, JsObject, JsString }
 
 /**
-  * Created by sergeykhruschak on 6/29/16.
-  */
+ * Created by sergeykhruschak on 6/29/16.
+ */
 class TemplateRenderingSpec extends FlatSpec with Matchers {
 
   "A template engine" should "render a sectioned message" in {

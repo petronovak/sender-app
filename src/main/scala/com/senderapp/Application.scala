@@ -3,7 +3,7 @@ package com.senderapp
 import akka.actor.Props
 import akka.pattern.BackoffSupervisor
 import com.senderapp.model.Events
-import com.typesafe.config.{ConfigFactory, ConfigObject}
+import com.typesafe.config.{ ConfigFactory, ConfigObject }
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConversions._
@@ -18,19 +18,20 @@ object Application extends App {
 
   val actorsList = actorsConfigList
     .filter { case (name, cfg: ConfigObject) => cfg.getBool("enabled", true) }
-    .map { case (name, actorConf: ConfigObject) =>
-      val className = actorConf.getStringOpt("class").get
-      val configName = actorConf.getString("config", name)
-      val props = Props(Class.forName(className))
+    .map {
+      case (name, actorConf: ConfigObject) =>
+        val className = actorConf.getStringOpt("class").get
+        val configName = actorConf.getString("config", name)
+        val props = Props(Class.forName(className))
 
-      val supervisor = BackoffSupervisor.props(
-        props,
-        childName = name + "_inst",
-        minBackoff = 3.seconds,
-        maxBackoff = 30.seconds,
-        randomFactor = 0.2)
+        val supervisor = BackoffSupervisor.props(
+          props,
+          childName = name + "_inst",
+          minBackoff = 3.seconds,
+          maxBackoff = 30.seconds,
+          randomFactor = 0.2)
 
-      (name, configName, system.actorOf(supervisor, name))
+        (name, configName, system.actorOf(supervisor, name))
     }
 
   // schedule configuration source reload with actors reconfiguration

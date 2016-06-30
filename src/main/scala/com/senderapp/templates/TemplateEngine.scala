@@ -48,7 +48,7 @@ class TemplateEngine {
       Some(cache.getOrElseUpdate(templateFile, new Mustache(Source.fromFile(templateFile, "UTF-8"))).render(msg.asTemplateData))
 
     case templateInline: String if templateInline.startsWith("mustache:") || templateInline.contains("{{") =>
-      val templateData = if(templateInline.startsWith("mustache:")) templateInline.substring("mustache:".length) else templateInline
+      val templateData = if (templateInline.startsWith("mustache:")) templateInline.substring("mustache:".length) else templateInline
       Some(cache.getOrElseUpdate(templateInline, new Mustache(Source.fromString(templateData))).render(msg.asTemplateData))
 
     case "raw-json" =>

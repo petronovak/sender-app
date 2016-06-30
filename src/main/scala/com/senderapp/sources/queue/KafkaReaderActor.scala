@@ -2,14 +2,14 @@ package com.senderapp.sources.queue
 
 import java.util
 
-import akka.actor.{Actor, ActorLogging}
+import akka.actor.{ Actor, ActorLogging }
 import akka.stream.scaladsl.Source
 import com.senderapp.Global
-import com.senderapp.model.{Events, Message}
-import com.softwaremill.react.kafka.{ConsumerProperties, PublisherWithCommitSink, ReactiveKafka}
+import com.senderapp.model.{ Events, Message }
+import com.softwaremill.react.kafka.{ ConsumerProperties, PublisherWithCommitSink, ReactiveKafka }
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.Deserializer
-import spray.json.{JsObject, JsString, JsValue, JsonParser}
+import spray.json.{ JsObject, JsString, JsValue, JsonParser }
 import com.senderapp.utils.Utils._
 
 import scala.concurrent.duration._
