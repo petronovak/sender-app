@@ -1,19 +1,21 @@
 package com.senderapp.processing.sms
 
-import akka.actor.{ Actor, ActorLogging }
+import java.net.URLEncoder
+
+import akka.actor.{Actor, ActorLogging}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.HostConnectionPool
-import akka.http.scaladsl.model.{ HttpRequest, HttpResponse }
-import akka.stream.scaladsl.{ Flow, Sink, Source }
+import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
+import akka.stream.scaladsl.{Flow, Sink, Source}
 import com.senderapp.Global
-import com.senderapp.model.{ Events, Message }
+import com.senderapp.model.{Events, Message}
 import com.senderapp.utils.Utils
-import com.typesafe.config.{ Config, ConfigFactory }
+import com.typesafe.config.{Config, ConfigFactory}
 import spray.json._
 
 import scala.collection.JavaConversions._
 import scala.concurrent.duration._
-import scala.util.{ Failure, Success, Try }
+import scala.util.{Failure, Success, Try}
 import Utils._
 class UnisendSmsSendingActor extends Actor with ActorLogging {
   import Global._
@@ -67,10 +69,10 @@ class UnisendSmsSendingActor extends Actor with ActorLogging {
 
   def buildRequest(msg: Message): HttpRequest = {
     val path = config.getString("path")
-    val key = config.getString("key")
-    val phones = msg.meta.getString("destination", config.getString("destination"))
-    val from = msg.meta.getString("fromName", config.getString("fromName"))
-    val body = msg.body.getOrElse(config.getString("body"))
+    val key = URLEncoder.encode(config.getString("key"), "UTF-8")
+    val phones = URLEncoder.encode(msg.meta.getString("destination", config.getString("destination")), "UTF-8")
+    val from = URLEncoder.encode(msg.meta.getString("fromName", config.getString("fromName")), "UTF-8")
+    val body = URLEncoder.encode(msg.body.getOrElse(config.getString("body")), "UTF-8")
 
     val url = s"$path?format=json&api_key=$key&phone=$phones&sender=$from&text=$body"
     HttpRequest(uri = url)
