@@ -8,6 +8,7 @@ import spray.json.JsString
 import scala.collection._
 import scala.compat.Platform
 import com.senderapp.utils.Utils._
+import org.slf4j.LoggerFactory
 
 import scala.io.Source
 
@@ -27,6 +28,7 @@ import scala.io.Source
  */
 class TemplateEngine {
 
+  private final val log = LoggerFactory.getLogger("template-engine")
   private[this] val cache = mutable.HashMap[String, Mustache]()
   final val CACHE_TTL = 120000
   var cacheClearTime = 0L
@@ -42,20 +44,25 @@ class TemplateEngine {
 
   private[this] def renderBodyCached(msg: Message): Option[String] = msg.meta.getStringOpt("template").flatMap {
     case templateUrl: String if templateUrl.contains("://") && templateUrl.endsWith(".mustache") =>
+      log.debug(s"Mustache URL found: $templateUrl")
       Some(cache.getOrElseUpdate(templateUrl, new Mustache(Source.fromURL(templateUrl, "UTF-8"))).render(msg.asTemplateData))
 
     case templateFile: String if templateFile.endsWith(".mustache") =>
+      log.debug(s"Mustache file found: $templateFile")
       Some(cache.getOrElseUpdate(templateFile, new Mustache(Source.fromFile(templateFile, "UTF-8"))).render(msg.asTemplateData))
 
     case templateInline: String if templateInline.startsWith("mustache:") || templateInline.contains("{{") =>
+      log.debug(s"Inline template found")
       val templateData = if (templateInline.startsWith("mustache:")) templateInline.substring("mustache:".length) else templateInline
       Some(cache.getOrElseUpdate(templateInline, new Mustache(Source.fromString(templateData))).render(msg.asTemplateData))
-
     case "raw-json" =>
+      log.debug(s"Raw json template found")
       Some(msg.data.compactPrint)
     case "bin-data" =>
+      log.debug(s"Binary template found")
       Some(msg.data.asJsObject.fields("bin").asInstanceOf[JsString].value) // TODO: validation
     case other =>
+      log.debug(s"Not found template match: $other")
       None
   }
 

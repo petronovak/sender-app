@@ -17,10 +17,13 @@ case class EqMatcher(path: String, pattern: ConfigValue) extends Matcher {
   override def matches(v: JsValue) = {
     v.pathOpt(path).map(js => js.unwrap.toString).contains(unwrapped)
   }
+
+  override def toString = s"$path = $unwrapped"
 }
 
 case class ExistsMatcher(path: String, exists: Boolean) extends Matcher {
   override def matches(v: JsValue) = v.pathOpt(path).isDefined == exists
+  override def toString = s"$path ${if(exists) "exists" else "not exists"}"
 }
 
 object Matchers {
