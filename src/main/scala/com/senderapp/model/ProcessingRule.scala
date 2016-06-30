@@ -80,7 +80,7 @@ class Trigger(config: Config) {
   val otherFields: JsObject = config.root().asJsObject
 
   def apply(msg: Message): ProcessingResult = {
-    val meta = msg.meta.asJsObject.copy(otherFields.fields).mapValues(js => loadVars(msg, js))
+    val meta = msg.meta ++ JsObject(otherFields.fields).mapValues(js => loadVars(msg, js))
     val updatedMsg = Message(service.getOrElse(msg.service), meta, msg.data)
 
     ProcessingResult(updatedMsg, send = service.isDefined, continue = continue)
