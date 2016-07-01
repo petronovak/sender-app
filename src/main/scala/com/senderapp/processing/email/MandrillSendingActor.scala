@@ -43,7 +43,7 @@ class MandrillSendingActor extends Actor with ActorLogging {
             log.info(s"Data: ${d.get}")
           }
         case Failure(ex) =>
-          log.warning("Error sending request to mandrill", ex)
+          log.warning("Error sending request to mandrill {}", ex)
       }
 
     case Events.Configure(name, newConfig) =>

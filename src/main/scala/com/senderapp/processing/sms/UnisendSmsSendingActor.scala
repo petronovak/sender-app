@@ -39,7 +39,7 @@ class UnisendSmsSendingActor extends Actor with ActorLogging {
             log.info(s"Data: ${d.get}")
           }
         case Failure(ex) =>
-          log.warning("Error sending request to unisend", ex)
+          log.warning("Error sending request to unisend {}", ex)
       }
 
     case Events.Configure(name, newConfig) =>
