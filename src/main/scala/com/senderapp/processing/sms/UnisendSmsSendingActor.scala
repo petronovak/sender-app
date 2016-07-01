@@ -24,9 +24,7 @@ class UnisendSmsSendingActor extends Actor with ActorLogging {
 
   var config: Config = _
 
-  val timeout = 1000.millis
-
-  var headersConf: List[Map[String, String]] = _
+  val timeout = 5 seconds
 
   override def receive: Receive = {
     case jsMsg: Message =>
@@ -51,8 +49,7 @@ class UnisendSmsSendingActor extends Actor with ActorLogging {
   }
 
   def configure(newConfig: Config) {
-    config = newConfig.withFallback(ConfigFactory.defaultReference().getConfig("unisend"))
-    headersConf = config.getObjectList("headers").map(Utils.unwrap).toList.asInstanceOf[List[Map[String, String]]]
+    config = newConfig.withFallback(ConfigFactory.defaultReference().getConfig("unisender-sms"))
     implicit val system = context.system
 
     // do not restart connection pool it doesn't change anyway
