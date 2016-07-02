@@ -13,7 +13,7 @@ class TemplateRenderingSpec extends FlatSpec with Matchers {
     val tpl = new TemplateEngine()
 
     val meta = JsObject(
-      "template" -> JsString("Inline template test: {{name}}, phone: {{#data}}{{phone}}, no: {{no}}{{/data}}")
+      "template" -> JsString("mustache:Inline template test: {{name}}, phone: {{#data}}{{phone}}, no: {{no}}{{/data}}")
     )
 
     val body = JsObject("name" -> JsString("user"),
