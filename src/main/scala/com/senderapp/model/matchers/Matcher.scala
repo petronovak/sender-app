@@ -23,7 +23,7 @@ case class EqMatcher(path: String, pattern: ConfigValue) extends Matcher {
 
 case class ExistsMatcher(path: String, exists: Boolean) extends Matcher {
   override def matches(v: JsValue) = v.pathOpt(path).isDefined == exists
-  override def toString = s"$path ${if(exists) "exists" else "not exists"}"
+  override def toString = s"$path ${if (exists) "exists" else "not exists"}"
 }
 
 object Matchers {

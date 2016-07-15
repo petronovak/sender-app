@@ -3,7 +3,7 @@ package com.senderapp.templates
 import java.security.InvalidParameterException
 
 import com.senderapp.model.Message
-import spray.json.JsString
+import spray.json.{JsString, JsValue}
 
 import scala.collection._
 import scala.compat.Platform
@@ -33,13 +33,16 @@ class TemplateEngine {
   final val CACHE_TTL = 120000
   var cacheClearTime = 0L
 
-  def renderBody(msg: Message): Option[String] = {
+  def renderTemplates(msg: Message): Message = {
 
     if (cacheClearTime < Platform.currentTime) {
       clearCache
     }
 
-    renderBodyCached(msg)
+    msg.copy(
+      meta = msg.meta.mapValues(js => loadVars(msg, js)),
+      body = renderBodyCached(msg)
+    )
   }
 
   private[this] def renderBodyCached(msg: Message): Option[String] = msg.meta.getStringOpt("template").flatMap {
@@ -64,6 +67,13 @@ class TemplateEngine {
     case other =>
       log.debug(s"Not found template match: $other")
       None
+  }
+
+  def loadVars(msg: Message, v: JsValue): JsValue = v match {
+    case template: JsString if template.value.contains("{{") =>
+      JsString(new Mustache(Source.fromString(template.value)).render(msg.asTemplateData))
+    case any =>
+      any
   }
 
   def clearCache = {

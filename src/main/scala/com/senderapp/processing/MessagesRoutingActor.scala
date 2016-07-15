@@ -34,7 +34,7 @@ class MessagesRoutingActor extends Actor with ActorLogging {
             val processingResult = rule(curMsg, log)
 
             if (processingResult.send) {
-              val updatedMsg = renderBody(processingResult.msg)
+              val updatedMsg = templateEngine.renderTemplates(processingResult.msg)
 
               log.info(s"Routing message $updatedMsg to ${updatedMsg.service} service")
 
@@ -58,8 +58,4 @@ class MessagesRoutingActor extends Actor with ActorLogging {
   def loadRules(config: Config) =
     config.getConfigList("rules").map(ProcessingRule(_)).toList
 
-  def renderBody(msg: Message) = {
-    val bodyOpt = templateEngine.renderBody(msg)
-    bodyOpt.map(body => msg.copy(body = Some(body))).getOrElse(msg)
-  }
 }

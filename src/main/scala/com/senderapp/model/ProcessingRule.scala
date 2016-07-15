@@ -73,6 +73,11 @@ class Criteria(config: Config) {
   override def toString = s"Criteria: meta:${metaMatchers.mkString(",")}, body:${bodyMatchers.mkString(",")}"
 }
 
+object Criteria {
+  def apply(config: Config): Criteria = new Criteria(config)
+  def apply(configStr: String): Criteria = new Criteria(ConfigFactory.parseString(configStr))
+}
+
 class Trigger(config: Config) {
   val service = if (config.hasPath("send-by")) Some(config.getString("send-by")) else None
   val continue = if (config.hasPath("continue")) config.getBoolean("continue") else true
@@ -80,20 +85,20 @@ class Trigger(config: Config) {
   val otherFields: JsObject = config.root().asJsObject
 
   def apply(msg: Message): ProcessingResult = {
-    val meta = msg.meta ++ JsObject(otherFields.fields).mapValues(js => loadVars(msg, js))
+    val meta = msg.meta ++ JsObject(otherFields.fields)
     val updatedMsg = Message(service.getOrElse(msg.service), meta, msg.data)
 
     ProcessingResult(updatedMsg, send = service.isDefined, continue = continue)
   }
 
-  def loadVars(msg: Message, v: JsValue): JsValue = v match {
-    case template: JsString if template.value.contains("{{") =>
-      JsString(new Mustache(Source.fromString(template.value)).render(msg.asTemplateData))
-    case any =>
-      any
-  }
+
 
   override def toString = s"Trigger: service = $service, fields = $otherFields"
+}
+
+object Trigger {
+  def apply(config: Config): Trigger = new Trigger(config)
+  def apply(configStr: String): Trigger = new Trigger(ConfigFactory.parseString(configStr))
 }
 
 case class ProcessingResult(msg: Message, send: Boolean = false, continue: Boolean = true)
