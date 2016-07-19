@@ -1,12 +1,13 @@
 package com.senderapp
 
 import java.io.File
-import java.net.URL
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import com.typesafe.config.{ Config, ConfigFactory }
 import org.slf4j.LoggerFactory
+
+import scala.io.Source
 
 object Global {
 
@@ -30,7 +31,8 @@ object Global {
     Option(System.getProperty("config")) orElse Option(System.getenv("config")) match {
       case Some(url) if url.contains("://") =>
         log.info(s"Reading configuration from URL: $url")
-        ConfigFactory.parseURL(new URL(url)).withFallback(ConfigFactory.defaultReference())
+        val source = Source.fromURL(url, "UTF-8")
+        ConfigFactory.parseString(source.mkString).withFallback(ConfigFactory.defaultReference())
 
       case Some(fileName) =>
         val file = new File(fileName)
