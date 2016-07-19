@@ -1,3 +1,5 @@
+import com.typesafe.sbt.packager.docker.{ExecCmd, Cmd}
+
 import scalariform.formatter.preferences._
 
 name := """sender-app"""
@@ -7,13 +9,18 @@ version := s"""0.2.$revision"""
 
 scalaVersion := "2.11.8"
 
-enablePlugins(JavaAppPackaging)
+enablePlugins(SbtNativePackager, JavaAppPackaging)
 
 name in Docker := "sender-app"
 dockerExposedPorts := Seq(6080)
-dockerBaseImage := "relateiq/oracle-java8"
+dockerBaseImage := "anapsix/alpine-java"
 dockerRepository := Some("impactua")
 dockerUpdateLatest := true
+daemonUser in Docker := "root"
+
+dockerCommands ++= Seq(
+  ExecCmd("RUN", "apk", "add", "--update", "libstdc++")
+)
 
 libraryDependencies ++= Seq(
   "com.softwaremill.reactivekafka" %% "reactive-kafka-core" % "0.9.0",

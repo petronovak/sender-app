@@ -91,8 +91,6 @@ class Trigger(config: Config) {
     ProcessingResult(updatedMsg, send = service.isDefined, continue = continue)
   }
 
-
-
   override def toString = s"Trigger: service = $service, fields = $otherFields"
 }
 
