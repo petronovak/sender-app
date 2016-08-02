@@ -30,7 +30,7 @@ object Global {
   private def configLoad(fallbackCfg: => Config): Config = {
     Option(System.getProperty("config")) orElse Option(System.getenv("config")) match {
       case Some(url) if url.contains("://") =>
-        log.info(s"Reading configuration from URL: $url")
+        log.trace(s"Reading configuration from URL: $url")
         val source = Source.fromURL(url, "UTF-8")
         ConfigFactory.parseString(source.mkString).withFallback(ConfigFactory.defaultReference())
 
@@ -38,14 +38,14 @@ object Global {
         val file = new File(fileName)
 
         if (file.lastModified() > lastConfigUpdateTime) {
-          log.info(s"Reading configuration from file: $fileName")
+          log.trace(s"Reading configuration from file: $fileName")
           lastConfigUpdateTime = file.lastModified()
           ConfigFactory.parseFile(file).withFallback(ConfigFactory.defaultReference())
         } else {
           fallbackCfg
         }
       case None =>
-        log.info(s"Using default configuration")
+        log.trace(s"Using default configuration")
         ConfigFactory.load()
     }
 

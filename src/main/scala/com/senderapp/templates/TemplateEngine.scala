@@ -3,7 +3,7 @@ package com.senderapp.templates
 import java.security.InvalidParameterException
 
 import com.senderapp.model.Message
-import spray.json.{JsString, JsValue}
+import spray.json.{ JsString, JsValue }
 
 import scala.collection._
 import scala.compat.Platform

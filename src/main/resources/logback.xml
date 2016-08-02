@@ -16,6 +16,7 @@
     <logger name="kafka.producer.async.DefaultEventHandler" level="OFF" /> <!-- To silence expected occasional 'Failed to collate messages by topic' on startup -->
     <logger name="org.apache.zookeeper.ClientCnxn" level="ERROR" />
     <logger name="org.I0Itec" level="WARN"/>
+    <logger name="global" level="INFO"/>
 
     <root level="TRACE">
         <appender-ref ref="STDOUT" />
