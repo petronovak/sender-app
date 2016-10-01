@@ -28,16 +28,22 @@ class CriteriaSpec extends FlatSpec with Matchers {
     crit.matchMeta("""{}""".parseJson) shouldEqual false
   }
 
-  it should "match meta with exists" in {
+  it should "match meta regardless the data type" in {
     val crit = Criteria(
       """{ meta: { width = 24, flag = "true" } }""".stripMargin)
     crit.matchMeta("""{ "width" : 24, "flag": true }""".parseJson) shouldEqual true
   }
 
-  it should "match meta regardless the data type" in {
+  it should "match meta with exists" in {
     val crit = Criteria(
       """{ meta: { width = 24, attr = { "$exists": true } } }""".stripMargin)
     crit.matchMeta("""{ "width" : "24", "attr": 50 }""".parseJson) shouldEqual true
   }
 
+  it should "match numbers by a regular expressions" in {
+    val crit = Criteria(
+      """{ meta: { name = { "$regex": "\\d{2}" } } }""".stripMargin)
+    crit.matchMeta("""{ "name": 50 }""".parseJson) shouldEqual true
+    crit.matchMeta("""{ "name": 501 }""".parseJson) shouldEqual false
+  }
 }

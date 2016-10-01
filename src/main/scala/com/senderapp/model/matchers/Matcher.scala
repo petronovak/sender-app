@@ -26,6 +26,11 @@ case class ExistsMatcher(path: String, exists: Boolean) extends Matcher {
   override def toString = s"$path ${if (exists) "exists" else "not exists"}"
 }
 
+case class RegexMatcher(path: String, regex: String) extends Matcher {
+  override def matches(v: JsValue) = v.pathOpt(path).exists(js => js.unwrap.toString.matches(regex))
+  override def toString = s"$path matches $regex"
+}
+
 object Matchers {
 
   def fromConfig(v: ConfigValue, path: String, confRoot: Config): Option[Matcher] = {
@@ -33,6 +38,8 @@ object Matchers {
       Some(ExistsMatcher(path, v.asInstanceOf[ConfigObject].get("$exists").unwrapped().asInstanceOf[Boolean]))
     } else if (tryEqMatcher(v, path, confRoot)) {
       Some(EqMatcher(path, v))
+    } else if (tryRegExpMatcher(v, path, confRoot)) {
+      Some(RegexMatcher(path, v.asInstanceOf[ConfigObject].get("$regex").unwrapped().asInstanceOf[String]))
     } else {
       None
     }
@@ -45,4 +52,9 @@ object Matchers {
 
   def tryExistsMatcher(v: ConfigValue, path: String, confRoot: Config): Boolean =
     v.isInstanceOf[ConfigObject] && v.asInstanceOf[ConfigObject].containsKey("$exists")
+
+  def tryRegExpMatcher(v: ConfigValue, path: String, confRoot: Config): Boolean = {
+    v.isInstanceOf[ConfigObject] && v.asInstanceOf[ConfigObject].containsKey("$regex")
+  }
+
 }
