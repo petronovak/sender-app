@@ -2,15 +2,15 @@ package com.senderapp.sources.queue
 
 import java.util
 
-import akka.actor.{Actor, ActorLogging}
+import akka.actor.{ Actor, ActorLogging }
 import akka.kafka.scaladsl.Consumer
-import akka.kafka.{ConsumerMessage, ConsumerSettings, Subscriptions}
+import akka.kafka.{ ConsumerMessage, ConsumerSettings, Subscriptions }
 import akka.stream.scaladsl._
 import com.senderapp.Global
-import com.senderapp.model.{Events, Message}
+import com.senderapp.model.{ Events, Message }
 import com.senderapp.utils.Utils._
-import org.apache.kafka.common.serialization.{ByteArrayDeserializer, Deserializer}
-import spray.json.{JsObject, JsString, JsValue, JsonParser}
+import org.apache.kafka.common.serialization.{ ByteArrayDeserializer, Deserializer }
+import spray.json.{ JsObject, JsString, JsValue, JsonParser }
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -48,8 +48,8 @@ class KafkaReaderActor extends Actor with ActorLogging {
       .withGroupId(group)
 
     consumerControl = Some(Consumer.committableSource(consumerSettings, Subscriptions.topics(topic))
-    .toMat(Sink.foreach[ConsumerMessage.CommittableMessage[Array[Byte], JsValue]](processMessage))(Keep.left)
-    .run())
+      .toMat(Sink.foreach[ConsumerMessage.CommittableMessage[Array[Byte], JsValue]](processMessage))(Keep.left)
+      .run())
   }
 
   def processMessage(msg: ConsumerMessage.CommittableMessage[Array[Byte], JsValue]) = {

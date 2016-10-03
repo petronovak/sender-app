@@ -1,27 +1,25 @@
 package com.senderapp.processing.sms
 
-import java.net.URLEncoder
-
-import akka.actor.{Actor, ActorLogging}
+import akka.actor.{ Actor, ActorLogging }
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.HostConnectionPool
-import akka.http.scaladsl.model.{FormData, HttpMethods, HttpRequest, HttpResponse}
-import akka.stream.scaladsl.{Flow, Sink, Source}
+import akka.http.scaladsl.model.headers.{ Authorization, BasicHttpCredentials }
+import akka.http.scaladsl.model.{ FormData, HttpMethods, HttpRequest, HttpResponse }
+import akka.stream.scaladsl.{ Flow, Sink, Source }
 import com.senderapp.Global
-import com.senderapp.model.{Events, Message}
-import com.senderapp.utils.Utils
-import com.typesafe.config.{Config, ConfigFactory}
+import com.senderapp.model.{ Events, Message }
+import com.senderapp.utils.Utils._
+import com.typesafe.config.{ Config, ConfigFactory }
 
 import scala.concurrent.duration._
-import scala.util.{Failure, Success, Try}
-import Utils._
-import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
+import scala.language.postfixOps
+import scala.util.{ Failure, Success, Try }
 
 /**
-  * Implementation of a clint for Twilio.com.
-  * See: https://www.twilio.com/docs/quickstart/java/sms
-  * @author Sergey Khruschak
-  */
+ * Implementation of a clint for Twilio.com.
+ * See: https://www.twilio.com/docs/quickstart/java/sms
+ * @author Sergey Khruschak
+ */
 class TwilioSmsSendingActor extends Actor with ActorLogging {
   import Global._
 
@@ -82,9 +80,10 @@ class TwilioSmsSendingActor extends Actor with ActorLogging {
     val url = s"$baseUrl/Accounts/$accountSid/Messages"
     log.info(s"Sending twilio request: https://${config.getString("host")}$url")
 
-    HttpRequest(uri = url, method = HttpMethods.POST,
-                entity = FormData("From" -> from, "To" -> phone, "Body" -> body).toEntity)
-          .withHeaders(Authorization(BasicHttpCredentials(accountSid, token)))
+    HttpRequest(uri = url,
+      method = HttpMethods.POST,
+      entity = FormData("From" -> from, "To" -> phone, "Body" -> body).toEntity
+    ).withHeaders(Authorization(BasicHttpCredentials(accountSid, token)))
   }
 
   case class SmsResult(response: Try[HttpResponse], msg: Message) extends Serializable

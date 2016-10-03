@@ -22,18 +22,20 @@ dockerCommands ++= Seq(
   ExecCmd("RUN", "apk", "add", "--update", "libstdc++")
 )
 
+val akkaVersion = "2.4.10"
+
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-stream-kafka" % "0.12",
   "ch.qos.logback" % "logback-classic" % "1.1.7",
   "org.slf4j" % "log4j-over-slf4j" % "1.7.21",
-  "com.typesafe.akka" %% "akka-slf4j" % "2.4.1",
-  "com.typesafe.akka" %% "akka-http-experimental" % "2.0.3",
-  "com.typesafe.akka" %% "akka-persistence-experimental" % "2.3.14",
+  "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
+  "com.typesafe.akka" %% "akka-http-experimental" % akkaVersion,
+  "com.typesafe.akka" %% "akka-persistence-experimental" % "2.4-M2",
   "org.iq80.leveldb" % "leveldb" % "0.7",
   "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8",
-  "com.typesafe.akka" %% "akka-http-spray-json-experimental" % "2.0.3",
+  "com.typesafe.akka" %% "akka-http-spray-json-experimental" % akkaVersion,
   "org.scalatest" %% "scalatest" % "2.2.6" % "test",
-  "com.typesafe.akka" %% "akka-testkit" % "2.4.1" % "test"
+  "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test"
 )
 
 scalariformSettings

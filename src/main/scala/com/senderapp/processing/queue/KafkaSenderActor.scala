@@ -6,11 +6,11 @@ import akka.actor._
 import akka.kafka.ProducerSettings
 import akka.kafka.scaladsl.Producer
 import akka.stream.OverflowStrategy
-import akka.stream.scaladsl.{Flow, Source}
+import akka.stream.scaladsl.{ Flow, Source }
 import com.senderapp.Global
-import com.senderapp.model.{Events, Message}
+import com.senderapp.model.{ Events, Message }
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.common.serialization.{ByteArraySerializer, Serializer}
+import org.apache.kafka.common.serialization.{ ByteArraySerializer, Serializer }
 
 class KafkaSenderActor extends Actor with ActorLogging {
   import Global._
