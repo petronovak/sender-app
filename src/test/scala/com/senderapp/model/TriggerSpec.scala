@@ -1,11 +1,11 @@
 package com.senderapp.model
 
-import org.scalatest.{FlatSpec, Matchers}
-import spray.json.{JsNull, JsObject, JsString}
+import org.scalatest.{ FlatSpec, Matchers }
+import spray.json.{ JsNull, JsObject, JsString }
 import com.senderapp.utils.Utils._
 /**
-  * Created by Sergey Khruschak on 7/14/16.
-  */
+ * Created by Sergey Khruschak on 7/14/16.
+ */
 class TriggerSpec extends FlatSpec with Matchers {
 
   "A Trigger" should "add meta fields to the message" in {
