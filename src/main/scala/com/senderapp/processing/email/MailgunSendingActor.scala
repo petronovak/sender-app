@@ -65,7 +65,7 @@ class MailgunSendingActor extends Actor with ActorLogging {
 
     // do not restart connection pool it doesn't change anyway
     if (connectionPoolFlowOpt.isEmpty) {
-      connectionPoolFlowOpt = Some(Http().cachedHostConnectionPoolTls[Message](config.getString("host")))
+      connectionPoolFlowOpt = Some(Http().cachedHostConnectionPool[Message](config.getString("host")))
     }
   }
 

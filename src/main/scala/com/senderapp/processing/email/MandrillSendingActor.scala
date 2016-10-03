@@ -60,7 +60,7 @@ class MandrillSendingActor extends Actor with ActorLogging {
 
     // do not restart connection pool it doesn't change anyway
     if (connectionPoolFlowOpt.isEmpty) {
-      connectionPoolFlowOpt = Some(Http().cachedHostConnectionPoolTls[Message](config.getString("host"), config.getInt("port")))
+      connectionPoolFlowOpt = Some(Http().cachedHostConnectionPool[Message](config.getString("host"), config.getInt("port")))
     }
   }
 
