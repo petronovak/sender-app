@@ -23,7 +23,7 @@ dockerCommands ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "com.softwaremill.reactivekafka" %% "reactive-kafka-core" % "0.9.0",
+  "com.typesafe.akka" %% "akka-stream-kafka" % "0.12",
   "ch.qos.logback" % "logback-classic" % "1.1.7",
   "org.slf4j" % "log4j-over-slf4j" % "1.7.21",
   "com.typesafe.akka" %% "akka-slf4j" % "2.4.1",

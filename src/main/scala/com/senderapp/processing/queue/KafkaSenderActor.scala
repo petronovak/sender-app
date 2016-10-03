@@ -2,46 +2,53 @@ package com.senderapp.processing.queue
 
 import java.util
 
-import akka.actor.{ Actor, ActorLogging, ActorRef, PoisonPill }
-import akka.stream.actor.ActorSubscriberMessage
+import akka.actor._
+import akka.kafka.ProducerSettings
+import akka.kafka.scaladsl.Producer
+import akka.stream.OverflowStrategy
+import akka.stream.scaladsl.{Flow, Source}
 import com.senderapp.Global
-import com.senderapp.model.{ Events, Message }
-import com.softwaremill.react.kafka.{ ProducerMessage, ProducerProperties, ReactiveKafka }
-import org.apache.kafka.common.serialization.Serializer
+import com.senderapp.model.{Events, Message}
+import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.kafka.common.serialization.{ByteArraySerializer, Serializer}
 
 class KafkaSenderActor extends Actor with ActorLogging {
   import Global._
 
-  val kafka = new ReactiveKafka()
-  var producerProps: Option[ProducerProperties[Array[Byte], Message]] = None
   var producerActor: Option[ActorRef] = None
 
   override def receive: Receive = {
     case msg: Message =>
       log.info(s"$msg")
-      producerActor.get ! ActorSubscriberMessage.OnNext(ProducerMessage(msg))
+      producerActor.get ! msg
 
     case Events.Configure(name, newConfig) =>
-      stopProducer
+      stopProducer()
 
       if (newConfig.hasPath("brokerList") && newConfig.hasPath("topicName")) {
         val brokers = newConfig.getString("brokerList")
         val topic = newConfig.getString("topicName")
-        initReader(brokers, topic)
+        initProducer(brokers, topic)
       }
 
     case unknown =>
       log.error("Received unknown data: " + unknown)
   }
 
-  def initReader(brokers: String, topic: String) {
+  def initProducer(brokers: String, topic: String) {
     log.info(s"Starting the kafka writer on $brokers, topic: $topic")
 
-    producerProps = Some(ProducerProperties(brokers, topic, new MessageSerializer()))
-    producerActor = producerProps.map(kafka.producerActor(_))
+    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new MessageSerializer())
+      .withBootstrapServers(brokers)
+
+    producerActor = Some(Flow[Message].map(new ProducerRecord[Array[Byte], Message](topic, _))
+      .to(Producer.plainSink(producerSettings))
+      .runWith(Source.actorRef[Message](100, OverflowStrategy.fail))
+    )
+
   }
 
-  private def stopProducer {
+  private def stopProducer() = {
     try {
       producerActor foreach { actor =>
         log.info(s"Stopping kafka producer")
@@ -54,7 +61,7 @@ class KafkaSenderActor extends Actor with ActorLogging {
   }
 
   override def postStop() {
-    stopProducer
+    stopProducer()
     super.postStop()
   }
 }
