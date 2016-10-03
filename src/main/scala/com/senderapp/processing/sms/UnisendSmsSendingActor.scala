@@ -2,22 +2,22 @@ package com.senderapp.processing.sms
 
 import java.net.URLEncoder
 
-import akka.actor.{ Actor, ActorLogging }
+import akka.actor.{Actor, ActorLogging}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.HostConnectionPool
-import akka.http.scaladsl.model.{ HttpRequest, HttpResponse }
-import akka.stream.scaladsl.{ Flow, Sink, Source }
+import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
+import akka.stream.scaladsl.{Flow, Sink, Source}
 import com.senderapp.Global
-import com.senderapp.model.{ Events, Message }
-import com.senderapp.utils.Utils
-import com.typesafe.config.{ Config, ConfigFactory }
-import spray.json._
+import com.senderapp.model.{Events, Message}
+import com.senderapp.utils.Utils._
+import com.typesafe.config.{Config, ConfigFactory}
 
-import scala.collection.JavaConversions._
 import scala.concurrent.duration._
-import scala.util.{ Failure, Success, Try }
-import Utils._
+import scala.language.postfixOps
+import scala.util.{Failure, Success, Try}
+
 class UnisendSmsSendingActor extends Actor with ActorLogging {
+
   import Global._
 
   var connectionPoolFlowOpt: Option[Flow[(HttpRequest, Message), (Try[HttpResponse], Message), HostConnectionPool]] = None
@@ -34,7 +34,9 @@ class UnisendSmsSendingActor extends Actor with ActorLogging {
       result.response match {
         case Success(resp) =>
           log.info(s"Unisend responded with $resp")
-          val future = resp.entity.toStrict(timeout).map { _.data.utf8String }
+          val future = resp.entity.toStrict(timeout).map {
+            _.data.utf8String
+          }
           future.onComplete { d =>
             log.info(s"Data: ${d.get}")
           }
@@ -76,4 +78,5 @@ class UnisendSmsSendingActor extends Actor with ActorLogging {
   }
 
   case class SmsResult(response: Try[HttpResponse], msg: Message) extends Serializable
+
 }
