@@ -1,75 +1,24 @@
 package com.senderapp.processing.sms
 
-import akka.actor.{ Actor, ActorLogging }
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.Http.HostConnectionPool
-import akka.http.scaladsl.model.headers.{ Authorization, BasicHttpCredentials }
-import akka.http.scaladsl.model.{ FormData, HttpMethods, HttpRequest, HttpResponse }
-import akka.stream.scaladsl.{ Flow, Sink, Source }
-import com.senderapp.Global
-import com.senderapp.model.{ Events, Message }
+import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
+import akka.http.scaladsl.model.{FormData, HttpMethods, HttpRequest}
+import com.senderapp.model.Message
 import com.senderapp.utils.Utils._
-import com.typesafe.config.{ Config, ConfigFactory }
 
-import scala.concurrent.duration._
 import scala.language.postfixOps
-import scala.util.{ Failure, Success, Try }
 
 /**
  * Implementation of a clint for Twilio.com.
  * See: https://www.twilio.com/docs/quickstart/java/sms
  * @author Sergey Khruschak
  */
-class TwilioSmsSendingActor extends Actor with ActorLogging {
-  import Global._
+class TwilioSmsSendingActor extends SmsSendingActor {
 
-  var connectionPoolFlowOpt: Option[Flow[(HttpRequest, Message), (Try[HttpResponse], Message), HostConnectionPool]] = None
-
-  var config: Config = _
-
-  val timeout = 5 seconds
-
-  override def receive: Receive = {
-    case jsMsg: Message =>
-      log.info(s"$jsMsg")
-      sendRequest(buildRequest(jsMsg) -> jsMsg)
-    case result: SmsResult =>
-      result.response match {
-        case Success(resp) =>
-          log.info(s"Twilio responded with $resp")
-          val future = resp.entity.toStrict(timeout).map { _.data.utf8String }
-          future.onComplete { d =>
-            log.info(s"Data: ${d.get}")
-          }
-        case Failure(ex) =>
-          log.warning("Error sending request to twilio: {}", ex)
-      }
-
-    case Events.Configure(name, newConfig) =>
-      configure(newConfig)
-    case unknown =>
-      log.error("Received unknown data: " + unknown)
-  }
-
-  def configure(newConfig: Config) {
-    config = newConfig.withFallback(ConfigFactory.defaultReference().getConfig("smsc"))
-    implicit val system = context.system
-
-    // do not restart connection pool it doesn't change anyway
-    if (connectionPoolFlowOpt.isEmpty) {
-      connectionPoolFlowOpt = Some(Http().cachedHostConnectionPool[Message](config.getString("host"), port = config.getInt("port")))
-    }
-  }
-
-  def sendRequest(request: (HttpRequest, Message)) =
-    Source.single(request).via(connectionPoolFlowOpt.get).runWith(Sink.foreach {
-      case (response, msg) =>
-        self ! SmsResult(response, msg)
-    })
+  val provider: String = "twilio"
 
   def buildRequest(msg: Message): HttpRequest = {
 
-    val baseUrl = config.getString("url")
+    val path = config.getString("path")
     val accountSid = config.getString("accountSid")
     val token = config.getString("token")
 
@@ -77,8 +26,8 @@ class TwilioSmsSendingActor extends Actor with ActorLogging {
     val from = msg.meta.getString("fromName", config.getString("fromName"))
     val body = msg.body.getOrElse(config.getString("body"))
 
-    val url = s"$baseUrl/Accounts/$accountSid/Messages"
-    log.info(s"Sending twilio request: https://${config.getString("host")}$url")
+    val url = s"$path/Accounts/$accountSid/Messages"
+    log.info(s"Sending $provider request: ${config.getString("host")}:${config.getString("port")}$url")
 
     HttpRequest(uri = url,
       method = HttpMethods.POST,
@@ -86,5 +35,4 @@ class TwilioSmsSendingActor extends Actor with ActorLogging {
     ).withHeaders(Authorization(BasicHttpCredentials(accountSid, token)))
   }
 
-  case class SmsResult(response: Try[HttpResponse], msg: Message) extends Serializable
 }

@@ -46,4 +46,11 @@ class CriteriaSpec extends FlatSpec with Matchers {
     crit.matchMeta("""{ "name": 50 }""".parseJson) shouldEqual true
     crit.matchMeta("""{ "name": 501 }""".parseJson) shouldEqual false
   }
+
+  it should "match phone numbers by a regular expressions" in {
+    val crit = Criteria(
+      """{ meta: { name = { "$regex": "\\+(38067.+|15109450777|380979473350)" } } }""".stripMargin)
+    crit.matchMeta("""{ "name": "+380675684068" }""".parseJson) shouldEqual true
+  }
+
 }
