@@ -32,7 +32,7 @@ abstract class SmsSendingActor extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case jsMsg: Message =>
-      log.info(s"$jsMsg")
+      log.info(s"Receive msg $jsMsg for $provider")
 
       sendRequest(buildRequest(jsMsg) -> jsMsg)
     case result: SmsResult =>
@@ -65,8 +65,13 @@ abstract class SmsSendingActor extends Actor with ActorLogging {
 
     // do not restart connection pool it doesn't change anyway
     if (connectionPoolFlowOpt.isEmpty) {
-      connectionPoolFlowOpt = Some(Http().cachedHostConnectionPool[Message](config.getString("host"), port = config.getInt("port")))
+      connectionPoolFlowOpt = config.getInt("port") match {
+        case 443 => Some(Http().cachedHostConnectionPoolHttps[Message](config.getString("host")))
+        case 80  => Some(Http().cachedHostConnectionPool[Message](config.getString("host")))
+      }
     }
+
+    log.info(s"Starting $provider sms sending actor")
   }
 
 }

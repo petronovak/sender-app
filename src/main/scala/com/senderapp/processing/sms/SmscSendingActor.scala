@@ -4,13 +4,12 @@ import java.net.URLEncoder
 
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest}
 import com.senderapp.model.Message
-import com.senderapp.utils.Utils
 import com.senderapp.utils.Utils._
 
 /**
- * Implementation of a clint for a smsc.ua.
- * See: http://smsc.ua/api/http/
- */
+  * Implementation of a clint for a smsc.ua.
+  * See: http://smsc.ua/api/http/
+  */
 class SmscSendingActor extends SmsSendingActor {
 
   val provider: String = "smsc"
