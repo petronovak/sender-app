@@ -22,22 +22,19 @@ class MailgunSendingActor extends AbstractSendingActor {
 
     val fromEmail = msg.meta.getStringOpt("fromEmail").getOrElse(config.getString("fromEmail"))
     val destination = msg.meta.getStringOpt("destination").getOrElse(config.getString("destination"))
-    // TODO: val headers = headersConf ++ msg.meta.getStringOpt("headers").map(_.asInstanceOf[List[Map[String, String]]]).getOrElse(List())
     val subject = msg.meta.getStringOpt("subject").getOrElse(config.getString("subject"))
 
-    /* val headersJs = headers.map { m =>
+    //val headers = headersConf ++ msg.meta.get("headers").map(_.asInstanceOf[List[Map[String, String]]]).getOrElse(List())
+    val mailgunHeaders = headersConf.map { m =>
       val item = m.head
       ("h:" + item._1) -> item._2
-    } */
+    }
 
     log.debug(s"Mailgun request: from: $fromEmail, to: $destination, subject: $subject")
 
-    val entity = FormData(
-      "from" -> fromEmail,
-      "to" -> destination,
-      "subject" -> subject,
-      "html" -> msg.body.getOrElse("")
-    ).toEntity
+    val data = Seq("from" -> fromEmail, "to" -> destination, "subject" -> subject, "html" -> msg.body.getOrElse(""))
+
+    val entity = FormData(data ++ mailgunHeaders:_*).toEntity
 
     val authHeaders = Seq(Authorization(BasicHttpCredentials("api", config.getString("key"))))
 

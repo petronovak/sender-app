@@ -25,10 +25,7 @@ class MandrillSendingActor extends AbstractSendingActor {
       "message" -> toMandrillMessage(msg)
     )
 
-    val jsonStr = json.compactPrint
-    log.debug(s"Json body: $jsonStr")
-
-    val entity = HttpEntities.create(MediaTypes.`application/json`.toContentType, jsonStr)
+    val entity = HttpEntities.create(MediaTypes.`application/json`.toContentType, json.compactPrint)
     RequestBuilding.Post(config.getString("path")).withEntity(entity)
   }
 
@@ -36,13 +33,13 @@ class MandrillSendingActor extends AbstractSendingActor {
     val fromEmail = msg.meta.getStringOpt("fromEmail").getOrElse(config.getString("fromEmail"))
     val fromName = msg.meta.getStringOpt("fromName").getOrElse(config.getString("fromName"))
     val destination = msg.meta.getStringOpt("destination").getOrElse(config.getString("destination"))
-    // TODO: val headers = headersConf ++ msg.meta.get("headers").map(_.asInstanceOf[List[Map[String, String]]]).getOrElse(List())
     val subject = msg.meta.getStringOpt("subject").getOrElse(config.getString("subject"))
 
-    /*val headersJs = headers.map { m =>
+    //val headers = headersConf ++ msg.meta.get("headers").map(_.asInstanceOf[List[Map[String, String]]]).getOrElse(List())
+    val headersJs = headersConf.map { m =>
       val item = m.head
       (item._1, JsString(item._2))
-    }*/
+    }
 
     val tplData = JsArray(msg.data.asJsObject.fields.toSeq.map {
       case (k, v) => JsObject(
@@ -59,7 +56,7 @@ class MandrillSendingActor extends AbstractSendingActor {
       "to" -> JsArray(
         JsObject("email" -> JsString(destination))
       ),
-      // TODO: "headers" -> JsObject(headersJs: _*),
+      "headers" -> JsObject(headersJs: _*),
       "merge_language" -> JsString("handlebars"),
       "global_merge_vars" -> tplData,
       "html" -> msg.body.map(JsString(_)).getOrElse(JsNull)

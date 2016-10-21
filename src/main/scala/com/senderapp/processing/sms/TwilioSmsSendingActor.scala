@@ -9,10 +9,11 @@ import com.senderapp.utils.Utils._
 import scala.language.postfixOps
 
 /**
- * Implementation of a clint for Twilio.com.
- * See: https://www.twilio.com/docs/quickstart/java/sms
- * @author Sergey Khruschak
- */
+  * Implementation of a clint for Twilio.com.
+  * See: https://www.twilio.com/docs/quickstart/java/sms
+  * @author Sergey Khruschak
+  * @author Yaroslav Derman
+  */
 class TwilioSmsSendingActor extends AbstractSendingActor {
 
   val provider: String = "twilio"
