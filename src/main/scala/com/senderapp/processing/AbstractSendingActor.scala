@@ -1,20 +1,20 @@
 package com.senderapp.processing
 
-import akka.actor.{Actor, ActorLogging}
+import akka.actor.{ Actor, ActorLogging }
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.HostConnectionPool
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
-import akka.stream.scaladsl.{Flow, Sink, Source}
+import akka.http.scaladsl.model.{ HttpRequest, HttpResponse }
+import akka.stream.scaladsl.{ Flow, Sink, Source }
 import com.senderapp.Global
-import com.senderapp.model.{Events, Message}
+import com.senderapp.model.{ Events, Message }
 import com.senderapp.processing.AbstractSendingActor.SendResult
 import com.senderapp.utils.Utils
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.{ Config, ConfigFactory }
 
 import scala.collection.JavaConversions._
 import scala.concurrent.duration._
 import scala.language.postfixOps
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
 /**
  *
@@ -43,7 +43,7 @@ abstract class AbstractSendingActor extends Actor with ActorLogging {
           log.info(s"$provider responded with $resp")
           val future = resp.entity.toStrict(timeout).map { _.data.utf8String }
           future.onComplete { d =>
-            log.info(s"Data: ${d.get}")
+            log.info(s"Data response from $provider: ${d.get}")
           }
         case Failure(ex) =>
           log.warning(s"Error sending request to $provider: {}", ex)
@@ -74,7 +74,7 @@ abstract class AbstractSendingActor extends Actor with ActorLogging {
       }
     }
 
-    log.info(s"Starting $provider sms sending actor")
+    log.info(s"Configure $provider sending actor")
   }
 
 }
