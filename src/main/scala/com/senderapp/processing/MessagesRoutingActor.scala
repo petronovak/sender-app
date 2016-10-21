@@ -26,7 +26,7 @@ class MessagesRoutingActor extends Actor with ActorLogging {
       rules = loadRules(config)
       templateEngine.clearCache
     case msg: Message =>
-      log.info(s"$msg")
+      log.debug(s"$msg")
 
       try {
         rules.foldLeft(msg) {

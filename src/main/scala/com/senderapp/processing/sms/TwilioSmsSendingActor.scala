@@ -3,16 +3,18 @@ package com.senderapp.processing.sms
 import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
 import akka.http.scaladsl.model.{FormData, HttpMethods, HttpRequest}
 import com.senderapp.model.Message
+import com.senderapp.processing.AbstractSendingActor
 import com.senderapp.utils.Utils._
 
 import scala.language.postfixOps
 
 /**
- * Implementation of a clint for Twilio.com.
- * See: https://www.twilio.com/docs/quickstart/java/sms
- * @author Sergey Khruschak
- */
-class TwilioSmsSendingActor extends SmsSendingActor {
+  * Implementation of a clint for Twilio.com.
+  * See: https://www.twilio.com/docs/quickstart/java/sms
+  * @author Sergey Khruschak
+  * @author Yaroslav Derman
+  */
+class TwilioSmsSendingActor extends AbstractSendingActor {
 
   val provider: String = "twilio"
 
