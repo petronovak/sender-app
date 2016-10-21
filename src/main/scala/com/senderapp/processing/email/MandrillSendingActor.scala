@@ -1,76 +1,21 @@
 package com.senderapp.processing.email
 
-import akka.actor.{ ActorLogging, Actor }
 import akka.http.javadsl.model.HttpEntities
-import akka.http.scaladsl.Http.HostConnectionPool
 import akka.http.scaladsl.client.RequestBuilding
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.{ HttpResponse, HttpRequest }
-import akka.http.scaladsl.Http
-import akka.stream.scaladsl.{ Flow, Sink, Source }
-import com.senderapp.Global
-import com.senderapp.model.{ Events, Message }
-import com.senderapp.utils.Utils
-import com.typesafe.config.{ ConfigFactory, Config }
+import com.senderapp.model.Message
+import com.senderapp.processing.AbstractSendingActor
+import com.senderapp.utils.Utils._
 import spray.json._
-import scala.collection.JavaConversions._
-import scala.util.{ Failure, Success, Try }
+
 import scala.concurrent.duration._
-import Utils._
 
-class MandrillSendingActor extends Actor with ActorLogging {
-  import Global._
+class MandrillSendingActor extends AbstractSendingActor {
 
-  var connectionPoolFlowOpt: Option[Flow[(HttpRequest, Message), (Try[HttpResponse], Message), HostConnectionPool]] = None
+  val provider: String = "mandrill"
+  override val timeout = 1000.millis
 
-  var config: Config = _
-
-  val timeout = 1000.millis
-
-  var headersConf: List[Map[String, String]] = _
-
-  override def receive: Receive = {
-    case jsMsg: Message =>
-      log.info(s"$jsMsg")
-      val entity = HttpEntities.create(MediaTypes.`application/json`.toContentType, buildRequest(jsMsg))
-      sendRequest(RequestBuilding.Post(config.getString("path")).withEntity(entity) -> jsMsg)
-    case result: MandrillResult =>
-      result.response match {
-        case Success(resp) =>
-          log.info(s"Mandrill responded with $resp")
-          val future = resp.entity.toStrict(timeout).map { _.data.utf8String }
-          future.onComplete { d =>
-            log.info(s"Data: ${d.get}")
-          }
-        case Failure(ex) =>
-          log.warning("Error sending request to mandrill {}", ex)
-      }
-
-    case Events.Configure(name, newConfig) =>
-      configure(newConfig)
-    case unknown =>
-      log.error("Received unknown data: " + unknown)
-  }
-
-  def configure(newConfig: Config) {
-    config = newConfig.withFallback(ConfigFactory.defaultReference().getConfig("mandrill"))
-    headersConf = config.getObjectList("headers").map(Utils.unwrap).toList.asInstanceOf[List[Map[String, String]]]
-    implicit val system = context.system
-    // implicit val materializer = ActorFlowMaterializer()
-
-    // do not restart connection pool it doesn't change anyway
-    if (connectionPoolFlowOpt.isEmpty) {
-      connectionPoolFlowOpt = Some(Http().cachedHostConnectionPool[Message](config.getString("host"), config.getInt("port")))
-    }
-  }
-
-  def sendRequest(request: (HttpRequest, Message)) =
-    Source.single(request).via(connectionPoolFlowOpt.get).runWith(Sink.foreach {
-      case (response, msg) =>
-        self ! MandrillResult(response, msg)
-    })
-
-  def buildRequest(msg: Message): String = {
+  def buildRequest(msg: Message) = {
     //val tmplField = msg.meta.get("template").map(_.toString).getOrElse(config.getString("template"))
 
     val json = JsObject(
@@ -82,7 +27,9 @@ class MandrillSendingActor extends Actor with ActorLogging {
 
     val jsonStr = json.compactPrint
     log.debug(s"Json body: $jsonStr")
-    jsonStr
+
+    val entity = HttpEntities.create(MediaTypes.`application/json`.toContentType, jsonStr)
+    RequestBuilding.Post(config.getString("path")).withEntity(entity)
   }
 
   def toMandrillMessage(msg: Message): JsObject = {
@@ -119,6 +66,5 @@ class MandrillSendingActor extends Actor with ActorLogging {
     )
   }
 
-  case class MandrillResult(response: Try[HttpResponse], msg: Message) extends Serializable
 }
 

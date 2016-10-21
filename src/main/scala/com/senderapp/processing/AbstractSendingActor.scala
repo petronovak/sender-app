@@ -7,8 +7,11 @@ import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import com.senderapp.Global
 import com.senderapp.model.{Events, Message}
+import com.senderapp.processing.AbstractSendingActor.SendResult
+import com.senderapp.utils.Utils
 import com.typesafe.config.{Config, ConfigFactory}
 
+import scala.collection.JavaConversions._
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
@@ -26,15 +29,15 @@ abstract class AbstractSendingActor extends Actor with ActorLogging {
   var connectionPoolFlowOpt: Option[Flow[(HttpRequest, Message), (Try[HttpResponse], Message), HostConnectionPool]] = None
   var config: Config = _
   val timeout = 5 seconds
+  var headersConf: List[Map[String, String]] = Nil
 
   def buildRequest(msg: Message): HttpRequest
 
   override def receive: Receive = {
     case jsMsg: Message =>
       log.info(s"Receive msg $jsMsg for $provider")
-
       sendRequest(buildRequest(jsMsg) -> jsMsg)
-    case result: Result =>
+    case result: SendResult =>
       result.response match {
         case Success(resp) =>
           log.info(s"$provider responded with $resp")
@@ -55,11 +58,12 @@ abstract class AbstractSendingActor extends Actor with ActorLogging {
   def sendRequest(request: (HttpRequest, Message)) =
     Source.single(request).via(connectionPoolFlowOpt.get).runWith(Sink.foreach {
       case (response, msg) =>
-        self ! Result(response, msg)
+        self ! SendResult(response, msg)
     })
 
   def configure(newConfig: Config) {
     config = newConfig.withFallback(ConfigFactory.defaultReference().getConfig(provider))
+    headersConf = Try(config.getObjectList("headers")).toOption.map(hs => hs.map(Utils.unwrap).toList.asInstanceOf[List[Map[String, String]]]).getOrElse(Nil)
     implicit val system = context.system
 
     // do not restart connection pool it doesn't change anyway
@@ -76,5 +80,5 @@ abstract class AbstractSendingActor extends Actor with ActorLogging {
 }
 
 object AbstractSendingActor {
-  case class Result(response: Try[HttpResponse], msg: Message) extends Serializable
+  case class SendResult(response: Try[HttpResponse], msg: Message) extends Serializable
 }

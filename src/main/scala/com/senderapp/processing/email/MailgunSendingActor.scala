@@ -1,84 +1,25 @@
 package com.senderapp.processing.email
 
-import akka.actor.{ Actor, ActorLogging }
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.Http.HostConnectionPool
 import akka.http.scaladsl.client.RequestBuilding
-import akka.http.scaladsl.model.headers.{ Authorization, BasicHttpCredentials }
-import akka.http.scaladsl.model.{ HttpRequest, HttpResponse, _ }
-import akka.stream.scaladsl.{ Flow, Sink, Source }
-import com.senderapp.Global
-import com.senderapp.model.{ Events, Message }
-import com.typesafe.config.{ Config, ConfigFactory }
+import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
+import akka.http.scaladsl.model.{HttpRequest, _}
+import com.senderapp.model.Message
+import com.senderapp.processing.AbstractSendingActor
+import com.senderapp.utils.Utils._
 
 import scala.collection.immutable.Seq
 import scala.concurrent.duration._
-import scala.util.{ Failure, Success, Try }
-import com.senderapp.utils.Utils._
 
-class MailgunSendingActor extends Actor with ActorLogging {
-  import Global._
+class MailgunSendingActor extends AbstractSendingActor {
 
-  var connectionPoolFlowOpt: Option[Flow[(HttpRequest, Message), (Try[HttpResponse], Message), HostConnectionPool]] = None
+  val provider: String = "mailgun"
 
-  var config: Config = _
+  override val timeout = 1000.millis
 
-  val timeout = 1000.millis
+  def buildRequest(msg: Message): HttpRequest = {
 
-  var headersConf: List[Map[String, String]] = Nil
+    val url = s"/v3/${config.getString("domain")}/messages"
 
-  override def receive: Receive = {
-    case jsMsg: Message =>
-
-      log.info(s"$jsMsg")
-
-      val url = s"/v3/${config.getString("domain")}/messages"
-      val entity = buildRequest(jsMsg)
-      val authHeaders = Seq(Authorization(BasicHttpCredentials("api", config.getString("key"))))
-
-      sendRequest(
-        RequestBuilding.Post(url).withHeadersAndEntity(authHeaders, entity) -> jsMsg
-      )
-
-    case result: MailgunResult =>
-      result.response match {
-        case Success(resp) =>
-          log.info(s"Mailgun responded with $resp")
-          val future = resp.entity.toStrict(timeout).map { _.data.utf8String }
-          future.onComplete { d =>
-            log.info(s"Data: ${d.get}")
-          }
-        case Failure(ex) =>
-          log.warning("Error sending request to mandrill {}", ex)
-      }
-
-    case Events.Configure(name, newConfig) =>
-      configure(newConfig)
-    case unknown =>
-      log.error("Received unknown data: " + unknown)
-  }
-
-  def configure(newConfig: Config) {
-    config = newConfig.withFallback(ConfigFactory.defaultReference().getConfig("mailgun"))
-
-    implicit val system = context.system
-
-    // do not restart connection pool it doesn't change anyway
-    if (connectionPoolFlowOpt.isEmpty) {
-      connectionPoolFlowOpt = config.getInt("port") match {
-        case 443 => Some(Http().cachedHostConnectionPoolHttps[Message](config.getString("host")))
-        case 80  => Some(Http().cachedHostConnectionPool[Message](config.getString("host")))
-      }
-    }
-  }
-
-  def sendRequest(request: (HttpRequest, Message)) =
-    Source.single(request).via(connectionPoolFlowOpt.get).runWith(Sink.foreach {
-      case (response, msg) =>
-        self ! MailgunResult(response, msg)
-    })
-
-  def buildRequest(msg: Message): RequestEntity = {
     val fromEmail = msg.meta.getStringOpt("fromEmail").getOrElse(config.getString("fromEmail"))
     val destination = msg.meta.getStringOpt("destination").getOrElse(config.getString("destination"))
     // TODO: val headers = headersConf ++ msg.meta.getStringOpt("headers").map(_.asInstanceOf[List[Map[String, String]]]).getOrElse(List())
@@ -91,14 +32,17 @@ class MailgunSendingActor extends Actor with ActorLogging {
 
     log.debug(s"Mailgun request: from: $fromEmail, to: $destination, subject: $subject")
 
-    FormData(
+    val entity = FormData(
       "from" -> fromEmail,
       "to" -> destination,
       "subject" -> subject,
       "html" -> msg.body.getOrElse("")
     ).toEntity
+
+    val authHeaders = Seq(Authorization(BasicHttpCredentials("api", config.getString("key"))))
+
+    RequestBuilding.Post(url).withHeadersAndEntity(authHeaders, entity)
   }
 
-  case class MailgunResult(response: Try[HttpResponse], msg: Message) extends Serializable
 }
 
