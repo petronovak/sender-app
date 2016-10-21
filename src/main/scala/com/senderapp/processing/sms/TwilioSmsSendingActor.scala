@@ -3,6 +3,7 @@ package com.senderapp.processing.sms
 import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
 import akka.http.scaladsl.model.{FormData, HttpMethods, HttpRequest}
 import com.senderapp.model.Message
+import com.senderapp.processing.AbstractSendingActor
 import com.senderapp.utils.Utils._
 
 import scala.language.postfixOps
@@ -12,7 +13,7 @@ import scala.language.postfixOps
  * See: https://www.twilio.com/docs/quickstart/java/sms
  * @author Sergey Khruschak
  */
-class TwilioSmsSendingActor extends SmsSendingActor {
+class TwilioSmsSendingActor extends AbstractSendingActor {
 
   val provider: String = "twilio"
 

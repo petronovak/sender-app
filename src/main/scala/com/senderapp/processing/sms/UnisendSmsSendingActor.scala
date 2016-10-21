@@ -4,11 +4,12 @@ import java.net.URLEncoder
 
 import akka.http.scaladsl.model.HttpRequest
 import com.senderapp.model.Message
+import com.senderapp.processing.AbstractSendingActor
 import com.senderapp.utils.Utils._
 
 import scala.language.postfixOps
 
-class UnisendSmsSendingActor extends SmsSendingActor {
+class UnisendSmsSendingActor extends AbstractSendingActor {
 
   override val provider: String = "unisender-sms"
 
