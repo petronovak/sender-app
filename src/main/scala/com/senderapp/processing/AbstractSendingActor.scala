@@ -1,5 +1,6 @@
 package com.senderapp.processing
 
+import akka.Done
 import akka.actor.{ Actor, ActorLogging }
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.HostConnectionPool
@@ -12,6 +13,7 @@ import com.senderapp.utils.Utils
 import com.typesafe.config.{ Config, ConfigFactory }
 
 import scala.collection.JavaConversions._
+import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.{ Failure, Success, Try }
@@ -55,7 +57,7 @@ abstract class AbstractSendingActor extends Actor with ActorLogging {
       log.error(s"Received unknown data for provider $provider: " + unknown)
   }
 
-  def sendRequest(request: (HttpRequest, Message)) =
+  def sendRequest(request: (HttpRequest, Message)): Future[Done] =
     Source.single(request).via(connectionPoolFlowOpt.get).runWith(Sink.foreach {
       case (response, msg) =>
         self ! SendResult(response, msg)

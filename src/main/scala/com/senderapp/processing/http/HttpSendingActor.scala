@@ -1,46 +1,34 @@
 package com.senderapp.processing.http
 
-import akka.actor.{ Actor, ActorLogging }
+import akka.Done
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.client.RequestBuilding
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
 import akka.http.scaladsl.model._
-import akka.pattern.pipe
 import akka.util.ByteString
 import com.senderapp.Global
-import com.senderapp.model.{ Events, Message }
+import com.senderapp.model.Message
+import com.senderapp.processing.AbstractSendingActor
+import com.senderapp.processing.AbstractSendingActor.SendResult
 import com.senderapp.utils.Utils
 import com.senderapp.utils.Utils._
-import com.typesafe.config.{ Config, ConfigFactory }
+import com.typesafe.config.{Config, ConfigFactory}
 
 import scala.collection.JavaConversions._
+import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.Try
 
-class HttpSendingActor extends Actor with ActorLogging {
+class HttpSendingActor extends AbstractSendingActor {
+
   import Global._
 
-  var config: Config = _
-
-  val timeout = 1000.millis
+  override val provider: String = "http"
+  override val timeout = 1000.millis
 
   val http = Http(context.system)
-  var headersConf: List[Map[String, String]] = _
 
-  override def receive: Receive = {
-    case msg: Message =>
-      log.info(s"$msg")
-      sendRequest(msg)
-    case result: HttpResult =>
-      val resp = result.response
-      log.info(s"Server responded with ${resp.status} : ${result.data}")
-    case Events.Configure(name, newConf) =>
-      config = newConf.withFallback(ConfigFactory.defaultReference().getConfig("http"))
-      headersConf = config.getObjectList("headers").map(Utils.unwrap).toList.asInstanceOf[List[Map[String, String]]]
-    case unknown =>
-      log.error("Received unknown data: " + unknown)
-  }
-
-  def sendRequest(msg: Message) = {
+  def buildRequest(msg: Message): HttpRequest = {
     val urlstr = msg.meta.getStringOpt("destination").getOrElse(config.getString("destination"))
     val method = msg.meta.getStringOpt("method").getOrElse(config.getString("method")).toLowerCase
 
@@ -62,11 +50,20 @@ class HttpSendingActor extends Actor with ActorLogging {
         RequestBuilding.Delete(uri = urlstr)
     }
 
-    val requestWithHeaders = request.addHeaders(akkaHeaders)
+    request.addHeaders(akkaHeaders)
+  }
 
-    http.singleRequest(request = requestWithHeaders).flatMap { r =>
-      r.entity.toStrict(timeout).map(entity => HttpResult(r, entity.data.utf8String, msg))
-    }.pipeTo(self)
+  override def configure(newConfig: Config) {
+    config = newConfig.withFallback(ConfigFactory.defaultReference().getConfig(provider))
+    headersConf = Try(config.getObjectList("headers")).toOption.map(hs => hs.map(Utils.unwrap).toList.asInstanceOf[List[Map[String, String]]]).getOrElse(Nil)
+    log.info(s"Configure $provider sending actor")
+  }
+
+  override def sendRequest(request: (HttpRequest, Message)) = {
+    http.singleRequest(request._1).onComplete {
+      case resp => self ! SendResult(resp, request._2)
+    }
+    Future.successful(Done)
   }
 
   private def parseHeaders(headers: List[Map[String, String]]): List[HttpHeader] = {
@@ -94,6 +91,4 @@ class HttpSendingActor extends Actor with ActorLogging {
 
     } getOrElse ContentTypes.`application/json`
 
-  case class HttpResult(response: HttpResponse, data: String, msg: Message)
 }
-

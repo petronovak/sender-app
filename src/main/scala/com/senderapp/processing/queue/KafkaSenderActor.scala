@@ -19,13 +19,13 @@ class KafkaSenderActor extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case msg: Message =>
-      log.info(s"$msg")
+      log.info(s"Receive msg $msg for kafka")
       producerActor.get ! msg
 
     case Events.Configure(name, newConfig) =>
-      stopProducer()
-
       if (newConfig.hasPath("brokerList") && newConfig.hasPath("topicName")) {
+        stopProducer()
+
         val brokers = newConfig.getString("brokerList")
         val topic = newConfig.getString("topicName")
         initProducer(brokers, topic)
