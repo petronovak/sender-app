@@ -32,7 +32,7 @@ object Global {
       case Some(url) if url.contains("://") =>
         log.trace(s"Reading configuration from URL: $url")
         val source = Source.fromURL(url, "UTF-8")
-        ConfigFactory.parseString(source.mkString).withFallback(ConfigFactory.defaultReference())
+        ConfigFactory.parseString(source.mkString).withFallback(ConfigFactory.defaultReference()).resolve()
 
       case Some(fileName) =>
         val file = new File(fileName)
@@ -40,13 +40,13 @@ object Global {
         if (file.lastModified() > lastConfigUpdateTime) {
           log.trace(s"Reading configuration from file: $fileName")
           lastConfigUpdateTime = file.lastModified()
-          ConfigFactory.parseFile(file).withFallback(ConfigFactory.defaultReference())
+          ConfigFactory.parseFile(file).withFallback(ConfigFactory.defaultReference()).resolve()
         } else {
           fallbackCfg
         }
       case None =>
         log.trace(s"Using default configuration")
-        ConfigFactory.load()
+        ConfigFactory.load().resolve()
     }
 
   }
