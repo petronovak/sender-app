@@ -8,6 +8,7 @@ import com.typesafe.config.{ Config, ConfigFactory }
 import org.slf4j.LoggerFactory
 
 import scala.io.Source
+import scala.util.{Failure, Success, Try}
 
 object Global {
 
@@ -31,9 +32,13 @@ object Global {
     Option(System.getProperty("config")) orElse Option(System.getenv("config")) match {
       case Some(url) if url.contains("://") =>
         log.trace(s"Reading configuration from URL: $url")
-        val source = Source.fromURL(url, "UTF-8")
-        ConfigFactory.parseString(source.mkString).withFallback(ConfigFactory.defaultReference()).resolve()
 
+        Try(Source.fromURL(url, "UTF-8")) match {
+          case Success(src) =>
+            ConfigFactory.parseString(src.mkString).withFallback(ConfigFactory.defaultReference()).resolve()
+          case Failure(ex) =>
+            fallbackCfg
+        }
       case Some(fileName) =>
         val file = new File(fileName)
 
