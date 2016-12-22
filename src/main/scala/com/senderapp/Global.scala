@@ -4,16 +4,16 @@ import java.io.File
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import com.typesafe.config.{ Config, ConfigFactory }
+import com.typesafe.config.{Config, ConfigFactory}
 import org.slf4j.LoggerFactory
 
 import scala.io.Source
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
 object Global {
 
   private[this] val log = LoggerFactory.getLogger("global")
-  private[this] var config = configLoad(ConfigFactory.load())
+  private[this] var config = configLoad(ConfigFactory.load().resolve())
   private[this] var lastConfigUpdateTime = 0L
 
   implicit val system = ActorSystem("sender", config)
@@ -28,17 +28,13 @@ object Global {
     !config.equals(oldConfig)
   }
 
-  private def configLoad(fallbackCfg: => Config): Config = {
+  private def configLoad(fallbackCfg: => Config): Config = Try {
     Option(System.getProperty("config")) orElse Option(System.getenv("config")) match {
       case Some(url) if url.contains("://") =>
         log.trace(s"Reading configuration from URL: $url")
+        val source = Source.fromURL(url, "UTF-8")
+        ConfigFactory.parseString(source.mkString).withFallback(ConfigFactory.defaultReference()).resolve()
 
-        Try(Source.fromURL(url, "UTF-8")) match {
-          case Success(src) =>
-            ConfigFactory.parseString(src.mkString).withFallback(ConfigFactory.defaultReference()).resolve()
-          case Failure(ex) =>
-            fallbackCfg
-        }
       case Some(fileName) =>
         val file = new File(fileName)
 
@@ -51,8 +47,10 @@ object Global {
         }
       case None =>
         log.trace(s"Using default configuration")
-        ConfigFactory.load().resolve()
+        fallbackCfg
     }
-
-  }
+  }.recover { case err =>
+    log.error(s"Cannot load configuration. Falling back to default", err)
+    fallbackCfg
+  }.get
 }

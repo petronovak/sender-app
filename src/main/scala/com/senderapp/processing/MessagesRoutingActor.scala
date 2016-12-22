@@ -18,13 +18,12 @@ class MessagesRoutingActor extends Actor with ActorLogging {
   override def receive: Receive = {
     case Events.Configure(name, config) =>
       if (!config.hasPath("rules")) {
-        throw new ConfigurationException("No streaming rules configured. Please create Typesafe config file and " +
-          "define 'rules' list there")
+        log.error("No streaming rules configured. Please create Typesafe config file and define 'rules' list there")
+      } else {
+        log.debug(s"Loading rules configuration ${config.getConfigList("rules")}")
+        rules = loadRules(config)
+        templateEngine.clearCache
       }
-
-      log.debug(s"Loading rules configuration ${config.getConfigList("rules")}")
-      rules = loadRules(config)
-      templateEngine.clearCache
     case msg: Message =>
       log.debug(s"$msg")
 

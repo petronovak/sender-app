@@ -34,7 +34,7 @@ class MailgunSendingActor extends AbstractSendingActor {
 
     val data = Seq("from" -> fromEmail, "to" -> destination, "subject" -> subject, "html" -> msg.body.getOrElse(""))
 
-    val entity = FormData(data ++ mailgunHeaders:_*).toEntity
+    val entity = FormData(data ++ mailgunHeaders: _*).toEntity
 
     val authHeaders = Seq(Authorization(BasicHttpCredentials("api", config.getString("key"))))
 
