@@ -36,8 +36,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-spray-json-experimental" % akkaVersion,
   "org.scalatest" %% "scalatest" % "2.2.6" % "test",
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test",
-  "javax.mail" % "mail" % "1.4.7",
-  "de.saly" % "javamail-mock2-halfmock" % "0.5-beta4"
+  "javax.mail" % "mail" % "1.4.7"
 )
 
 scalariformSettings

@@ -25,6 +25,7 @@ class SmtpSendingActor extends Actor with ActorLogging {
 
   val defaultDestination: String = config.getString(s"$provider.destination")
   val defaultSubject: String = config.getString(s"$provider.subject")
+  val defaultText: String = config.getString(s"$provider.text")
 
   val props: Properties = createProperties
 
@@ -49,15 +50,17 @@ class SmtpSendingActor extends Actor with ActorLogging {
     val session = Session.getInstance(props, senderAuthenticator)
 
     val message = new MimeMessage(session)
+    val textContent = msg.meta.getStringOpt("text").getOrElse(defaultText)
     val subject = msg.meta.getStringOpt("subject").getOrElse(defaultSubject)
     val destination = msg.meta.getStringOpt("destination").getOrElse(defaultDestination)
 
     message.setFrom(new InternetAddress(from))
     message.setRecipient(JavaMail.RecipientType.TO, new InternetAddress(destination))
     message.setSubject(subject)
+    message.setText(textContent)
 
-    log.info(s"Sending mail from: $from to: $destination with subject: $subject")
     Transport.send(message)
+    log.info(s"Mail sent from: $from to: $destination with subject: $subject")
   }
 
   private def createProperties = {
