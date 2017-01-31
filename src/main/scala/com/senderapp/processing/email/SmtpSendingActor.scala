@@ -18,7 +18,7 @@ class SmtpSendingActor extends Actor with ActorLogging {
   val provider = "smtp"
   val config: Config = ConfigFactory.load()
 
-  val from: String = config.getString(s"$provider.login")
+  val login: String = config.getString(s"$provider.login")
   val password: String = config.getString(s"$provider.password")
   val port: String = config.getString(s"$provider.port")
   val host: String = config.getString(s"$provider.host")
@@ -30,10 +30,10 @@ class SmtpSendingActor extends Actor with ActorLogging {
   val props: Properties = createProperties
 
   private val senderAuthenticator = {
-    log.info(s"Creating Authenticator for $from")
+    log.info(s"Creating Authenticator for $login")
     new javax.mail.Authenticator() {
       override protected def getPasswordAuthentication: PasswordAuthentication = {
-        new PasswordAuthentication(from, password)
+        new PasswordAuthentication(login, password)
       }
     }
   }
@@ -54,13 +54,13 @@ class SmtpSendingActor extends Actor with ActorLogging {
     val subject = msg.meta.getStringOpt("subject").getOrElse(defaultSubject)
     val destination = msg.meta.getStringOpt("destination").getOrElse(defaultDestination)
 
-    message.setFrom(new InternetAddress(from))
+    message.setFrom(new InternetAddress(login))
     message.setRecipient(JavaMail.RecipientType.TO, new InternetAddress(destination))
     message.setSubject(subject)
     message.setText(textContent)
 
     Transport.send(message)
-    log.info(s"Mail sent from: $from to: $destination with subject: $subject")
+    log.info(s"Mail sent from: $login to: $destination with subject: $subject")
   }
 
   private def createProperties = {
