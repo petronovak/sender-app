@@ -15,19 +15,19 @@ import com.typesafe.config.{Config, ConfigFactory}
   */
 class SmtpSendingActor extends Actor with ActorLogging {
 
-  val provider = "smtp"
-  val config: Config = ConfigFactory.load()
+  private val provider = "smtp"
+  private val config: Config = ConfigFactory.load()
 
-  val login: String = config.getString(s"$provider.login")
-  val password: String = config.getString(s"$provider.password")
-  val port: String = config.getString(s"$provider.port")
-  val host: String = config.getString(s"$provider.host")
+  private val login: String = config.getString(s"$provider.login")
+  private val password: String = config.getString(s"$provider.password")
+  private val port: String = config.getString(s"$provider.port")
+  private val host: String = config.getString(s"$provider.host")
 
-  val defaultDestination: String = config.getString(s"$provider.destination")
-  val defaultSubject: String = config.getString(s"$provider.subject")
-  val defaultText: String = config.getString(s"$provider.text")
+  private val defaultDestination: String = config.getString(s"$provider.destination")
+  private val defaultSubject: String = config.getString(s"$provider.subject")
+  private val defaultText: String = config.getString(s"$provider.text")
 
-  val props: Properties = createProperties
+  private val props: Properties = createProperties
 
   private val senderAuthenticator = {
     log.info(s"Creating Authenticator for $login")
@@ -38,6 +38,8 @@ class SmtpSendingActor extends Actor with ActorLogging {
     }
   }
 
+  private val session: Session = Session.getInstance(props, senderAuthenticator)
+
   override def receive = {
     case msg: Message =>
       log.info(s"Receive msg $msg for $provider")
@@ -47,7 +49,6 @@ class SmtpSendingActor extends Actor with ActorLogging {
 
   private def sendMail(msg: Message): Unit = {
     log.info("Creating session")
-    val session = Session.getInstance(props, senderAuthenticator)
 
     val message = new MimeMessage(session)
     val textContent = msg.meta.getStringOpt("text").getOrElse(defaultText)
