@@ -1,4 +1,4 @@
-import com.typesafe.sbt.packager.docker.{ExecCmd, Cmd}
+import com.typesafe.sbt.packager.docker.ExecCmd
 
 import scalariform.formatter.preferences._
 
@@ -35,7 +35,8 @@ libraryDependencies ++= Seq(
   "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8",
   "com.typesafe.akka" %% "akka-http-spray-json-experimental" % akkaVersion,
   "org.scalatest" %% "scalatest" % "2.2.6" % "test",
-  "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test"
+  "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test",
+  "javax.mail" % "mail" % "1.4.7"
 )
 
 scalariformSettings
