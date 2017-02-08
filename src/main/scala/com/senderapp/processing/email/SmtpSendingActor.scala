@@ -51,13 +51,18 @@ class SmtpSendingActor extends Actor with ActorLogging {
     val subject = msg.meta.getStringOpt("subject").getOrElse(defaultSubject)
     val destination = msg.meta.getStringOpt("destination").getOrElse(defaultDestination)
 
-    message.setFrom(new InternetAddress(login))
-    message.setRecipient(JavaMail.RecipientType.TO, new InternetAddress(destination))
-    message.setSubject(subject)
-    message.setText(textContent)
+    val configuredMsg = createMessage(message, subject, textContent, destination)
 
-    Transport.send(message)
+    Transport.send(configuredMsg)
     log.info(s"Mail sent from: $login to: $destination with subject: $subject")
+  }
+
+  private def createMessage(msg: MimeMessage, subject: String, textContent: String, destination: String): MimeMessage = {
+    msg.setFrom(new InternetAddress(login))
+    msg.setRecipient(JavaMail.RecipientType.TO, new InternetAddress(destination))
+    msg.setSubject(subject)
+    msg.setText(textContent)
+    msg
   }
 
   private def createProperties: Properties = {
