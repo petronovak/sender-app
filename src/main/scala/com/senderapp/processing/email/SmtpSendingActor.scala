@@ -30,7 +30,7 @@ class SmtpSendingActor extends Actor with ActorLogging {
 
   private var props: Properties = _
 
-  private var senderAuthenticator = _
+  private var senderAuthenticator: Authenticator = _
 
   private var session: Session = _
 
