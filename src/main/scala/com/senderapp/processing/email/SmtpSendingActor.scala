@@ -5,7 +5,7 @@ import javax.mail.internet._
 import javax.mail.{PasswordAuthentication, Session, Transport, Message => JavaMail}
 
 import akka.actor.{Actor, ActorLogging}
-import com.senderapp.model.Message
+import com.senderapp.model.{Events, Message}
 import com.senderapp.utils.Utils._
 import com.typesafe.config.{Config, ConfigFactory}
 
@@ -16,7 +16,8 @@ import com.typesafe.config.{Config, ConfigFactory}
 class SmtpSendingActor extends Actor with ActorLogging {
 
   private val provider = "smtp"
-  private val config: Config = ConfigFactory.load()
+
+  private var config: Config = _
 
   private val login: String = config.getString(s"$provider.login")
   private val password: String = config.getString(s"$provider.password")
@@ -44,6 +45,8 @@ class SmtpSendingActor extends Actor with ActorLogging {
     case msg: Message =>
       log.info(s"Receive msg $msg for $provider")
       sendMail(msg)
+    case Events.Configure(_, newConfig) =>
+      configure(newConfig)
     case other => log.info(s"Unknown message $other")
   }
 
@@ -64,7 +67,7 @@ class SmtpSendingActor extends Actor with ActorLogging {
     log.info(s"Mail sent from: $login to: $destination with subject: $subject")
   }
 
-  private def createProperties = {
+  private def createProperties: Properties = {
     log.info("Creating properties")
     val resProp = System.getProperties
       resProp.put("mail.smtp.auth", "true")
@@ -72,5 +75,10 @@ class SmtpSendingActor extends Actor with ActorLogging {
       resProp.put("mail.smtp.port", port)
       resProp.put("mail.smtp.host", host)
     resProp
+  }
+
+  private def configure(newConfig: Config) = {
+    config = newConfig.withFallback(ConfigFactory.defaultReference().getConfig(provider))
+    log.info(s"Configure $provider sending actor")
   }
 }
