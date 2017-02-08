@@ -1,12 +1,12 @@
 // https://github.com/vspy/scala-mustache
 package com.senderapp.templates
 
-import java.lang.reflect.{Field => F, Method => M}
+import java.lang.reflect.{ Field => F, Method => M }
 
 import scala.annotation.tailrec
 import scala.collection.MapLike
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Awaitable}
+import scala.concurrent.{ Await, Awaitable }
 import scala.io.Source
 
 case class MustacheParseException(line: Int, msg: String) extends Exception("Line " + line + ": " + msg)

@@ -1,8 +1,8 @@
 package com.senderapp.processing.email
 
 import akka.http.scaladsl.client.RequestBuilding
-import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
-import akka.http.scaladsl.model.{HttpRequest, _}
+import akka.http.scaladsl.model.headers.{ Authorization, BasicHttpCredentials }
+import akka.http.scaladsl.model.{ HttpRequest, _ }
 import com.senderapp.model.Message
 import com.senderapp.processing.AbstractSendingActor
 import com.senderapp.utils.Utils._

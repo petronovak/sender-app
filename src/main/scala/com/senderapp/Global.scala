@@ -4,7 +4,7 @@ import java.io.File
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.{ Config, ConfigFactory }
 import org.slf4j.LoggerFactory
 
 import scala.io.Source
@@ -49,8 +49,9 @@ object Global {
         log.trace(s"Using default configuration")
         fallbackCfg
     }
-  }.recover { case err =>
-    log.error(s"Cannot load configuration. Falling back to default", err)
-    fallbackCfg
+  }.recover {
+    case err =>
+      log.error(s"Cannot load configuration. Falling back to default", err)
+      fallbackCfg
   }.get
 }

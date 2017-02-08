@@ -2,19 +2,18 @@ package com.senderapp.processing.email
 
 import java.util.Properties
 import javax.mail.internet._
-import javax.mail.{Authenticator, PasswordAuthentication, Session, Transport, Message => JavaMail}
+import javax.mail.{ Authenticator, PasswordAuthentication, Session, Transport, Message => JavaMail }
 
-import akka.actor.{Actor, ActorLogging}
-import com.senderapp.model.{Events, Message}
+import akka.actor.{ Actor, ActorLogging }
+import com.senderapp.model.{ Events, Message }
 import com.senderapp.utils.Utils._
-import com.typesafe.config.{Config, ConfigFactory}
-
+import com.typesafe.config.{ Config, ConfigFactory }
 
 /**
-  * Created by faiaz on 31.01.17.
-  */
+ * Created by faiaz on 31.01.17.
+ */
 class SmtpSendingActor extends Actor with ActorLogging {
-
+  private final val provider = "smtp"
   private var config: Config = _
 
   private var login: String = _

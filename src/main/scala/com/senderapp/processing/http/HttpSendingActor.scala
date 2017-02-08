@@ -12,7 +12,7 @@ import com.senderapp.processing.AbstractSendingActor
 import com.senderapp.processing.AbstractSendingActor.SendResult
 import com.senderapp.utils.Utils
 import com.senderapp.utils.Utils._
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.{ Config, ConfigFactory }
 
 import scala.collection.JavaConversions._
 import scala.concurrent.Future
