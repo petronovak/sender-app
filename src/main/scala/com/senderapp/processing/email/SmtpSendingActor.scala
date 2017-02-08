@@ -2,10 +2,10 @@ package com.senderapp.processing.email
 
 import java.util.Properties
 import javax.mail.internet._
-import javax.mail.{PasswordAuthentication, Session, Transport, Message => JavaMail}
+import javax.mail.{Authenticator, PasswordAuthentication, Session, Transport, Message => JavaMail}
 
 import akka.actor.{Actor, ActorLogging}
-import com.senderapp.model.Message
+import com.senderapp.model.{Events, Message}
 import com.senderapp.utils.Utils._
 import com.typesafe.config.{Config, ConfigFactory}
 
@@ -16,34 +16,30 @@ import com.typesafe.config.{Config, ConfigFactory}
 class SmtpSendingActor extends Actor with ActorLogging {
 
   private val provider = "smtp"
-  private val config: Config = ConfigFactory.load()
 
-  private val login: String = config.getString(s"$provider.login")
-  private val password: String = config.getString(s"$provider.password")
-  private val port: String = config.getString(s"$provider.port")
-  private val host: String = config.getString(s"$provider.host")
+  private var config: Config = _
 
-  private val defaultDestination: String = config.getString(s"$provider.destination")
-  private val defaultSubject: String = config.getString(s"$provider.subject")
-  private val defaultText: String = config.getString(s"$provider.text")
+  private var login: String = _
+  private var password: String = _
+  private var port: String = _
+  private var host: String = _
 
-  private val props: Properties = createProperties
+  private var defaultDestination: String = _
+  private var defaultSubject: String = _
+  private var defaultText: String = _
 
-  private val senderAuthenticator = {
-    log.info(s"Creating Authenticator for $login")
-    new javax.mail.Authenticator() {
-      override protected def getPasswordAuthentication: PasswordAuthentication = {
-        new PasswordAuthentication(login, password)
-      }
-    }
-  }
+  private var props: Properties = _
 
-  private val session: Session = Session.getInstance(props, senderAuthenticator)
+  private var senderAuthenticator = _
+
+  private var session: Session = _
 
   override def receive = {
     case msg: Message =>
       log.info(s"Receive msg $msg for $provider")
       sendMail(msg)
+    case Events.Configure(_, newConfig) =>
+      configure(newConfig)
     case other => log.info(s"Unknown message $other")
   }
 
@@ -64,7 +60,7 @@ class SmtpSendingActor extends Actor with ActorLogging {
     log.info(s"Mail sent from: $login to: $destination with subject: $subject")
   }
 
-  private def createProperties = {
+  private def createProperties: Properties = {
     log.info("Creating properties")
     val resProp = System.getProperties
       resProp.put("mail.smtp.auth", "true")
@@ -72,5 +68,37 @@ class SmtpSendingActor extends Actor with ActorLogging {
       resProp.put("mail.smtp.port", port)
       resProp.put("mail.smtp.host", host)
     resProp
+  }
+
+  private def createAuthenticator: Authenticator = {
+    log.info(s"Creating Authenticator for $login")
+    new javax.mail.Authenticator() {
+      override protected def getPasswordAuthentication: PasswordAuthentication = {
+        new PasswordAuthentication(login, password)
+      }
+    }
+  }
+
+  private def createSession: Session = {
+    Session.getInstance(props, senderAuthenticator)
+  }
+
+  private def configure(newConfig: Config) = {
+    config = newConfig.withFallback(ConfigFactory.defaultReference().getConfig(provider))
+
+    login = config.getString("login")
+    password = config.getString("password")
+    port = config.getString("port")
+    host = config.getString("host")
+
+    defaultDestination = config.getString("destination")
+    defaultSubject = config.getString("subject")
+    defaultText = config.getString("text")
+
+    props = createProperties
+    senderAuthenticator = createAuthenticator
+    session = createSession
+
+    log.info(s"Configure $provider sending actor")
   }
 }
