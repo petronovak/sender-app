@@ -15,11 +15,10 @@ import com.typesafe.config.{Config, ConfigFactory}
   */
 class SmtpSendingActor extends Actor with ActorLogging {
 
-  private val provider = "smtp"
-
   private var config: Config = _
 
   private var login: String = _
+  private var loginAddr: InternetAddress = _
   private var password: String = _
   private var port: String = _
   private var host: String = _
@@ -36,16 +35,18 @@ class SmtpSendingActor extends Actor with ActorLogging {
 
   override def receive = {
     case msg: Message =>
-      log.info(s"Receive msg $msg for $provider")
-      sendMail(msg)
+      try {
+        sendMail(msg)
+      } catch {
+        case ex: Exception =>
+          log.error(ex, s"Failed to send a message $msg")
+      }
     case Events.Configure(_, newConfig) =>
       configure(newConfig)
     case other => log.warning(s"Unknown message $other")
   }
 
   private def sendMail(msg: Message): Unit = {
-    log.info("Creating session")
-
     val message = new MimeMessage(session)
     val textContent = msg.body.getOrElse(defaultText)
     val subject = msg.meta.getStringOpt("subject").getOrElse(defaultSubject)
@@ -58,7 +59,7 @@ class SmtpSendingActor extends Actor with ActorLogging {
   }
 
   private def createMessage(msg: MimeMessage, subject: String, textContent: String, destination: String): MimeMessage = {
-    msg.setFrom(new InternetAddress(login))
+    msg.setFrom(loginAddr)
     msg.setRecipient(JavaMail.RecipientType.TO, new InternetAddress(destination))
     msg.setSubject(subject)
     msg.setText(textContent, "utf-8", "html")
@@ -66,32 +67,27 @@ class SmtpSendingActor extends Actor with ActorLogging {
   }
 
   private def createProperties: Properties = {
-    log.info("Creating properties")
     val resProp = System.getProperties
-      resProp.put("mail.smtp.auth", "true")
-      resProp.put("mail.smtp.starttls.enable", "true")
-      resProp.put("mail.smtp.port", port)
-      resProp.put("mail.smtp.host", host)
+    resProp.put("mail.smtp.auth", "true")
+    resProp.put("mail.smtp.starttls.enable", "true")
+    resProp.put("mail.smtp.port", port)
+    resProp.put("mail.smtp.host", host)
     resProp
   }
 
-  private def createAuthenticator: Authenticator = {
-    log.info(s"Creating Authenticator for $login")
-    new javax.mail.Authenticator() {
-      override protected def getPasswordAuthentication: PasswordAuthentication = {
-        new PasswordAuthentication(login, password)
-      }
+  private def createAuthenticator: Authenticator = new javax.mail.Authenticator() {
+    override protected def getPasswordAuthentication: PasswordAuthentication = {
+      new PasswordAuthentication(login, password)
     }
   }
 
-  private def createSession: Session = {
-    Session.getInstance(props, senderAuthenticator)
-  }
+  private def createSession = Session.getInstance(props, senderAuthenticator)
 
   private def configure(newConfig: Config) = {
     config = newConfig.withFallback(ConfigFactory.defaultReference().getConfig(provider))
 
     login = config.getString("login")
+    loginAddr = new InternetAddress(login)
     password = config.getString("password")
     port = config.getString("port")
     host = config.getString("host")
@@ -103,7 +99,5 @@ class SmtpSendingActor extends Actor with ActorLogging {
     props = createProperties
     senderAuthenticator = createAuthenticator
     session = createSession
-
-    log.info(s"Configure $provider sending actor")
   }
 }
