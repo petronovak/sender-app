@@ -40,14 +40,14 @@ class SmtpSendingActor extends Actor with ActorLogging {
       sendMail(msg)
     case Events.Configure(_, newConfig) =>
       configure(newConfig)
-    case other => log.info(s"Unknown message $other")
+    case other => log.warning(s"Unknown message $other")
   }
 
   private def sendMail(msg: Message): Unit = {
     log.info("Creating session")
 
     val message = new MimeMessage(session)
-    val textContent = msg.meta.getStringOpt("text").getOrElse(defaultText)
+    val textContent = msg.body.getOrElse(defaultText)
     val subject = msg.meta.getStringOpt("subject").getOrElse(defaultSubject)
     val destination = msg.meta.getStringOpt("destination").getOrElse(defaultDestination)
 
@@ -61,7 +61,7 @@ class SmtpSendingActor extends Actor with ActorLogging {
     msg.setFrom(new InternetAddress(login))
     msg.setRecipient(JavaMail.RecipientType.TO, new InternetAddress(destination))
     msg.setSubject(subject)
-    msg.setText(textContent)
+    msg.setText(textContent, "utf-8", "html")
     msg
   }
 
